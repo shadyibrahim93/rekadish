@@ -164,13 +164,11 @@ export default function CookingMode({
           <Timer />
         </div>
         {/* --- NEW AD SLOT --- */}
-        <div>
-          <AdSlot
-            id='105'
-            position='cooking-mode-footer'
-            marginTop='20px'
-          />
-        </div>
+        <AdSlot
+          id='105'
+          position='cooking-mode-footer'
+          marginTop='20px'
+        />
       </div>
     </div>
   );

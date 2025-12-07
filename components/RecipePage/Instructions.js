@@ -14,8 +14,6 @@ export default function InstructionsSection({ recipe, cookingMode }) {
   return (
     <section className='vr-card vr-section-instructions'>
       <h3 className='vr-section-title'>Instructions</h3>
-      import React from 'react'; import AdSlot from './AdSlot'; // Ensure this
-      path is correct // ... inside your component return ...
       <ol className='vr-instructions'>
         {instructionsToShow?.map((step, idx) => (
           <React.Fragment key={idx}>

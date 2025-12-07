@@ -321,15 +321,13 @@ export default function CategoryPage({
                   recipe={r}
                 />
 
-                {(index + 1) % 6 === 0 && (
-                  <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                    <AdSlot
-                      id='101'
-                      position='in-feed'
-                      height='100%'
-                    />
-                  </article>
-                )}
+                <AdSlot
+                  id='101'
+                  position='in-feed'
+                  height='100%'
+                  index={index}
+                  every={6}
+                />
               </>
             ))}
           </div>

@@ -12,6 +12,8 @@ import AdSlot from '../AdSlot';
 import Comments from '../Comments/Comments';
 import { useUser } from '../UserContext';
 import { BRAND_NAME } from '../../lib/constants';
+import { getRecipeEquipmentForInstructions } from '../../utils/getRecipeEquipment.js';
+import ProductsWeUse from './ProductsWeUse.js';
 
 export default function RecipePage({ recipe }) {
   /* -----------------------------------------------------
@@ -79,6 +81,14 @@ export default function RecipePage({ recipe }) {
     if (!value) return '';
     return value.charAt(0).toUpperCase() + value.slice(1);
   };
+
+  // -----------------------------------------------------
+  // 🧰 Products / Equipment we use (from instructions)
+  // -----------------------------------------------------
+  const equipmentProducts = useMemo(
+    () => getRecipeEquipmentForInstructions(stableRecipe, 3),
+    [stableRecipe.id]
+  );
 
   /* -----------------------------------------------------
      🔥 ONE EFFECT TO FETCH ALL RELATED DATA
@@ -210,6 +220,12 @@ export default function RecipePage({ recipe }) {
           />
           <QuestionsSection recipe={stableRecipe} />
 
+          {/* PRODUCTS / EQUIPMENT WE USE */}
+          <ProductsWeUse
+            products={equipmentProducts}
+            recipeTitle={stableRecipe.title}
+          />
+
           {/* INGREDIENT MATCH */}
           {ingredientMatchRecipes.length > 0 && (
             <section
@@ -235,17 +251,13 @@ export default function RecipePage({ recipe }) {
                       recipe={r}
                     />
 
-                    {/* Insert Ad after every 6th recipe */}
-                    {(index + 1) % 6 === 0 && (
-                      <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                        {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                        <AdSlot
-                          id='101'
-                          position='in-feed'
-                          height='100%'
-                        />
-                      </article>
-                    )}
+                    <AdSlot
+                      id='101'
+                      position='in-feed'
+                      height='100%'
+                      index={index}
+                      every={6}
+                    />
                   </>
                 ))}
               </div>
@@ -279,17 +291,13 @@ export default function RecipePage({ recipe }) {
                       recipe={r}
                     />
 
-                    {/* Insert Ad after every 6th recipe */}
-                    {(index + 1) % 6 === 0 && (
-                      <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                        {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                        <AdSlot
-                          id='101'
-                          position='in-feed'
-                          height='100%'
-                        />
-                      </article>
-                    )}
+                    <AdSlot
+                      id='101'
+                      position='in-feed'
+                      height='100%'
+                      index={index}
+                      every={6}
+                    />
                   </>
                 ))}
               </div>
@@ -321,17 +329,13 @@ export default function RecipePage({ recipe }) {
                       recipe={r}
                     />
 
-                    {/* Insert Ad after every 6th recipe */}
-                    {(index + 1) % 6 === 0 && (
-                      <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                        {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                        <AdSlot
-                          id='101'
-                          position='in-feed'
-                          height='100%'
-                        />
-                      </article>
-                    )}
+                    <AdSlot
+                      id='101'
+                      position='in-feed'
+                      height='100%'
+                      index={index}
+                      every={6}
+                    />
                   </>
                 ))}
               </div>

@@ -144,7 +144,6 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
   flex-direction: column;
   background: #fff;
   border-radius: 12px;
-  height: 100%;
 
   .vr-star {
     font-size: 22px;
@@ -210,6 +209,21 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
   width: 100%;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+
+  .vr-equipment__cta {
+    justify-content: flex-end;
+    padding: 0.5rem 0 0;
+    background-color: transparent;
+    border-top: 1px dotted #ddd;
+    border-radius: 0;
+    color: var(--vr-accent);
+
+    &:hover {
+      background-color: transparent;
+      color: var(--vr-primary);
+    }
+  }
 }
 
 /* -----------------------------------------

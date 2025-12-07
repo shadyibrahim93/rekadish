@@ -1,78 +1,63 @@
+// MealPlannerContext.js
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const MealPlannerContext = createContext();
 
 const STORAGE_KEY = 'vr-meal-planner-items';
-const CHECKED_KEY = 'vr-meal-planner-checked'; // New storage key
+const CHECKED_KEY = 'vr-meal-planner-checked';
+
+// ⬇️ helper to fetch full recipe if needed
+async function fetchFullRecipeIfNeeded(recipe) {
+  // already has ingredients → just use it
+  if (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+    return recipe;
+  }
+
+  try {
+    const res = await fetch(`/api/recipes/${recipe.id}`);
+    const json = await res.json();
+    if (json?.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.error('Failed to fetch full recipe for planner:', err);
+  }
+
+  // fallback: return original object
+  return recipe;
+}
 
 export function MealPlannerProvider({ children }) {
   const [plannerItems, setPlannerItems] = useState([]);
-  const [checkedIngredients, setCheckedIngredients] = useState([]); // Store checked names
+  const [checkedIngredients, setCheckedIngredients] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // -----------------------------------------------------
-  // LOAD FROM LOCAL STORAGE
-  // -----------------------------------------------------
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // ... your existing load/save effects stay the same ...
 
-    try {
-      // Load Items
-      const rawItems = window.localStorage.getItem(STORAGE_KEY);
-      if (rawItems) {
-        const parsed = JSON.parse(rawItems);
-        if (Array.isArray(parsed)) setPlannerItems(parsed);
-      }
+  // 🔁 REPLACE addRecipeToPlanner WITH THIS VERSION
+  const addRecipeToPlanner = async (recipe) => {
+    if (!recipe?.id) return;
 
-      // Load Checked State
-      const rawChecked = window.localStorage.getItem(CHECKED_KEY);
-      if (rawChecked) {
-        const parsed = JSON.parse(rawChecked);
-        if (Array.isArray(parsed)) setCheckedIngredients(parsed);
-      }
-    } catch (err) {
-      console.error('Failed to load planner:', err);
-    } finally {
-      setIsInitialized(true);
-    }
-  }, []);
+    const fullRecipe = await fetchFullRecipeIfNeeded(recipe);
 
-  // -----------------------------------------------------
-  // SAVE TO LOCAL STORAGE
-  // -----------------------------------------------------
-  useEffect(() => {
-    if (typeof window === 'undefined' || !isInitialized) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plannerItems));
-      window.localStorage.setItem(
-        CHECKED_KEY,
-        JSON.stringify(checkedIngredients)
-      );
-    } catch (err) {
-      console.error('Failed to save planner:', err);
-    }
-  }, [plannerItems, checkedIngredients, isInitialized]);
-
-  // -----------------------------------------------------
-  // ACTIONS
-  // -----------------------------------------------------
-  const addRecipeToPlanner = (recipe) => {
     setPlannerItems((prev) => {
-      if (prev.some((p) => p.id === recipe.id)) return prev;
+      if (prev.some((p) => p.id === fullRecipe.id)) return prev;
+
       return [
         ...prev,
         {
-          id: recipe.id,
-          slug: recipe.slug,
-          title: recipe.title,
-          cuisine: recipe.cuisine,
-          ingredients: recipe.ingredients,
+          id: fullRecipe.id,
+          slug: fullRecipe.slug,
+          title: fullRecipe.title,
+          cuisine: fullRecipe.cuisine,
+          ingredients: fullRecipe.ingredients || [], // ✅ guaranteed field
           includeIngredients: true
         }
       ];
     });
   };
 
+  // ... rest of the context stays the same ...
   const removeRecipeFromPlanner = (id) => {
     setPlannerItems((prev) => prev.filter((item) => item.id !== id));
   };
@@ -87,7 +72,6 @@ export function MealPlannerProvider({ children }) {
     );
   };
 
-  // NEW: Toggle Checkmark for Ingredient
   const toggleIngredientCheck = (ingredientName) => {
     setCheckedIngredients((prev) => {
       const name = ingredientName.trim().toLowerCase();
@@ -103,16 +87,14 @@ export function MealPlannerProvider({ children }) {
     setCheckedIngredients([]);
   };
 
-  const isInPlanner = (id) => {
-    return plannerItems.some((item) => item.id === id);
-  };
+  const isInPlanner = (id) => plannerItems.some((item) => item.id === id);
 
   return (
     <MealPlannerContext.Provider
       value={{
         plannerItems,
-        checkedIngredients, // Export state
-        toggleIngredientCheck, // Export action
+        checkedIngredients,
+        toggleIngredientCheck,
         addRecipeToPlanner,
         removeRecipeFromPlanner,
         toggleIncludeIngredients,

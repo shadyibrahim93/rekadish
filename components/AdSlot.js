@@ -6,12 +6,24 @@ const AdSlot = ({
   height,
   marginTop,
   marginBottom,
-  placement
+  placement,
+  index, // 👉 index in the list
+  every // 👉 show ad every N items (optional)
 }) => {
   const [isDev, setIsDev] = useState(false);
-  const isLoaded = useRef(false); // 👈 Prevents double-firing
+  const isLoaded = useRef(false); // Prevents double-firing Ezoic
+  const containerRef = useRef(null); // For hiding empty slots
+
+  // Should this particular instance actually render?
+  const shouldRender =
+    typeof every === 'number' && typeof index === 'number'
+      ? (index + 1) % every === 0
+      : true;
 
   useEffect(() => {
+    // If this instance isn't supposed to render, skip all Ezoic logic
+    if (!shouldRender) return;
+
     // 1. Check if we are in local development
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
@@ -32,7 +44,7 @@ const AdSlot = ({
 
         try {
           // Define the placeholder
-          window.ezstandalone.define(parseInt(id)); // parseInt ensures ID is a number
+          window.ezstandalone.define(parseInt(id, 10)); // ensure ID is a number
 
           // Logic: Enable if new, Refresh if existing
           if (!window.ezstandalone.enabled) {
@@ -48,7 +60,29 @@ const AdSlot = ({
         }
       });
     }
-  }, [id]);
+  }, [id, shouldRender]);
+
+  // Hide empty ad container if nothing loads (no more empty boxes)
+  useEffect(() => {
+    if (!shouldRender || isDev) return;
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const timeout = setTimeout(() => {
+      // If the slot has no height (or tiny), assume no ad filled
+      if (!el.offsetHeight || el.offsetHeight < 10) {
+        el.style.display = 'none';
+      }
+    }, 4000); // wait a bit for Ezoic to fill
+
+    return () => clearTimeout(timeout);
+  }, [id, isDev, shouldRender]);
+
+  // If this instance isn't supposed to render (e.g., not every 6th item)
+  if (!shouldRender) {
+    return null;
+  }
 
   // LOCAL DEVELOPMENT VISUALIZER
   if (isDev) {
@@ -58,18 +92,16 @@ const AdSlot = ({
           position: `${placement}`,
           top: '100px',
           backgroundColor: '#f0f0f0',
-          border: '2px dashed #ccc',
           color: '#666',
-          padding: '20px',
-          height: `${height || 'auto'}`, // Fallback for safety
           textAlign: 'center',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          marginTop: `${marginTop}`,
-          marginBottom: `${marginBottom ? marginBottom : '1rem'}`,
-          borderRadius: '8px'
+          borderRadius: '8px',
+          marginTop: marginTop,
+          marginBottom: marginBottom || '1rem',
+          minHeight: height || '120px'
         }}
       >
         EZOIC AD PLACEHOLDER
@@ -84,6 +116,7 @@ const AdSlot = ({
   // LIVE PRODUCTION SLOT
   return (
     <div
+      ref={containerRef}
       className='ezoic-ad-slot-container'
       style={{
         marginTop: marginTop,

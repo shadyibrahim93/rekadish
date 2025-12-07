@@ -24,7 +24,7 @@ export async function getStaticProps() {
     .select(cardColumns) // 👈 OPTIMIZED
     .order('rating', { ascending: false })
     .order('rating_count', { ascending: false })
-    .limit(11);
+    .limit(8);
 
   // --- B. Fetch a batch to determine Cuisines & Serving Times ---
   // We fetch a larger batch to find what tags/cuisines exist
@@ -40,14 +40,14 @@ export async function getStaticProps() {
     const key = r.serving_time?.trim();
     if (!key) return acc;
     if (!acc[key]) acc[key] = [];
-    if (acc[key].length < 11) acc[key].push(r);
+    if (acc[key].length < 8) acc[key].push(r);
     return acc;
   }, {});
 
   // 2. Process Unique Cuisines
   const uniqueCuisines = [
     ...new Set(all.map((r) => r.cuisine?.trim()).filter(Boolean))
-  ].slice(0, 11); // Limit to top 11 cuisines
+  ].slice(0, 8); // Limit to top 8 cuisines
 
   // --- C. Fetch Recipes for those Specific Cuisines ---
   // We use Promise.all to fetch them in parallel (FAST)
@@ -59,7 +59,7 @@ export async function getStaticProps() {
         .from('recipes')
         .select(cardColumns) // 👈 OPTIMIZED
         .eq('cuisine', cuisine)
-        .limit(11);
+        .limit(8);
 
       cuisineRecipes[cuisine] = data || [];
     })
@@ -284,17 +284,13 @@ export default function Home({
                       recipe={r}
                     />
 
-                    {/* Insert Ad after every 6th recipe */}
-                    {(index + 1) % 6 === 0 && (
-                      <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                        {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                        <AdSlot
-                          id='101'
-                          position='in-feed'
-                          height='100%'
-                        />
-                      </article>
-                    )}
+                    <AdSlot
+                      id='101'
+                      position='in-feed'
+                      height='100%'
+                      index={index}
+                      every={6}
+                    />
                   </>
                 ))}
               </div>
@@ -334,17 +330,13 @@ export default function Home({
                             recipe={r}
                           />
 
-                          {/* Insert Ad after every 6th recipe */}
-                          {(index + 1) % 6 === 0 && (
-                            <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                              {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                              <AdSlot
-                                id='101'
-                                position='in-feed'
-                                height='100%'
-                              />
-                            </article>
-                          )}
+                          <AdSlot
+                            id='101'
+                            position='in-feed'
+                            height='100%'
+                            index={index}
+                            every={6}
+                          />
                         </>
                       ))}
                     </div>
@@ -386,18 +378,13 @@ export default function Home({
                             key={r.id}
                             recipe={r}
                           />
-
-                          {/* Insert Ad after every 6th recipe */}
-                          {(index + 1) % 6 === 0 && (
-                            <article className='vr-card vr-recipe-card vr-ad-card-wrapper'>
-                              {/* REPLACE '101' WITH YOUR REAL EZOIC PLACEHOLDER ID */}
-                              <AdSlot
-                                id='101'
-                                position='in-feed'
-                                height='100%'
-                              />
-                            </article>
-                          )}
+                          <AdSlot
+                            id='101'
+                            position='in-feed'
+                            height='100%'
+                            index={index}
+                            every={6}
+                          />
                         </>
                       ))}
                     </div>
