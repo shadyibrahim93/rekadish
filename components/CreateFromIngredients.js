@@ -113,7 +113,6 @@ export default function CreateFromIngredients() {
               <AdSlot
                 id='101'
                 position='in-feed'
-                height='100%'
                 index={index}
                 every={5}
               />

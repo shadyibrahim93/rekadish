@@ -34,7 +34,6 @@ export default function InstructionsSection({ recipe, cookingMode }) {
                 <AdSlot
                   id='106'
                   position='in-content-instructions'
-                  marginBottom={'1rem'}
                   marginTop={'1rem'}
                 />
               </li>

@@ -199,7 +199,6 @@ export default function SearchResultsPage({ initialTrending = [] }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />
@@ -242,7 +241,6 @@ export default function SearchResultsPage({ initialTrending = [] }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />

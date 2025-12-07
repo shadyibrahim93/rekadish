@@ -72,7 +72,6 @@ export default function QuestionsSection({ recipe }) {
                 <AdSlot
                   id='107'
                   position='in-faq'
-                  marginBottom='0'
                 />
               </div>
             )}

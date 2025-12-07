@@ -254,7 +254,6 @@ export default function RecipePage({ recipe }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />
@@ -294,7 +293,6 @@ export default function RecipePage({ recipe }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />
@@ -332,7 +330,6 @@ export default function RecipePage({ recipe }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />
@@ -359,7 +356,6 @@ export default function RecipePage({ recipe }) {
             className='vr-card'
             position='sidebar'
             placement='sticky'
-            height='auto'
           />
         </aside>
       </div>

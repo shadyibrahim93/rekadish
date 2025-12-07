@@ -3,15 +3,14 @@ import { useEffect, useState, useRef } from 'react';
 const AdSlot = ({
   id,
   position,
-  height,
   marginTop,
   marginBottom,
   placement,
-  index, // 👉 index in the list
-  every // 👉 show ad every N items (optional)
+  index, // index in the list
+  every // show ad every N items (optional)
 }) => {
   const [isDev, setIsDev] = useState(false);
-  const [isVisible, setIsVisible] = useState(true); // 👈 controls whether container renders
+  const [isVisible, setIsVisible] = useState(true);
   const isLoaded = useRef(false);
   const containerRef = useRef(null);
 
@@ -58,23 +57,30 @@ const AdSlot = ({
 
   // Hide/remove empty ad container if nothing loads
   useEffect(() => {
-    // don't do the empty-check in dev (we always want to see placeholder)
     if (!shouldRender || isDev) return;
 
-    const el = containerRef.current;
-    if (!el) return;
-
     const timeout = setTimeout(() => {
-      // If the slot has no height (or tiny), assume no ad filled
-      if (!el.offsetHeight || el.offsetHeight < 10) {
-        setIsVisible(false); // 👈 remove it entirely
+      if (typeof window === 'undefined') return;
+
+      const placeholder = document.getElementById(
+        `ezoic-pub-ad-placeholder-${id}`
+      );
+
+      // If there's no placeholder or it's basically empty / zero height,
+      // assume no ad was filled and hide the slot.
+      if (
+        !placeholder ||
+        placeholder.offsetHeight < 5 ||
+        placeholder.childElementCount === 0
+      ) {
+        setIsVisible(false);
       }
-    }, 4000);
+    }, 4000); // wait a bit for Ezoic to attempt fill
 
     return () => clearTimeout(timeout);
-  }, [id, isDev, shouldRender]);
+  }, [id, shouldRender, isDev]);
 
-  // If this instance shouldn't render or we've determined it's empty, bail out
+  // If this instance shouldn't render at all or we decided it's empty → bail
   if (!shouldRender || (!isDev && !isVisible)) {
     return null;
   }
@@ -95,8 +101,7 @@ const AdSlot = ({
           fontWeight: 'bold',
           borderRadius: '8px',
           marginTop,
-          marginBottom: marginBottom || '1rem',
-          minHeight: height || '120px'
+          minHeight: '120px'
         }}
       >
         EZOIC AD PLACEHOLDER
@@ -115,8 +120,8 @@ const AdSlot = ({
       className='ezoic-ad-slot-container'
       style={{
         marginTop,
-        marginBottom: marginBottom || '1rem',
-        minHeight: height
+        marginBottom: marginBottom || '1rem'
+        // no minHeight in prod – let Ezoic set it if it fills
       }}
     >
       <div id={`ezoic-pub-ad-placeholder-${id}`} />

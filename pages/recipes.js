@@ -267,7 +267,6 @@ export default function Recipes({
                 <AdSlot
                   id='101'
                   position='in-feed'
-                  height='100%'
                   index={index}
                   every={6}
                 />

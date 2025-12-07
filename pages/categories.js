@@ -261,7 +261,6 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
                     <AdSlot
                       id='101'
                       position='in-feed'
-                      height='100%'
                       index={index}
                       every={6}
                     />
