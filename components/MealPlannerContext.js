@@ -6,9 +6,8 @@ const MealPlannerContext = createContext();
 const STORAGE_KEY = 'vr-meal-planner-items';
 const CHECKED_KEY = 'vr-meal-planner-checked';
 
-// ⬇️ helper to fetch full recipe if needed
+// Fetch full recipe if we don't have ingredients yet
 async function fetchFullRecipeIfNeeded(recipe) {
-  // already has ingredients → just use it
   if (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
     return recipe;
   }
@@ -23,7 +22,6 @@ async function fetchFullRecipeIfNeeded(recipe) {
     console.error('Failed to fetch full recipe for planner:', err);
   }
 
-  // fallback: return original object
   return recipe;
 }
 
@@ -32,9 +30,55 @@ export function MealPlannerProvider({ children }) {
   const [checkedIngredients, setCheckedIngredients] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // ... your existing load/save effects stay the same ...
+  // -----------------------------------------------------
+  // LOAD FROM LOCAL STORAGE (ONCE)
+  // -----------------------------------------------------
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-  // 🔁 REPLACE addRecipeToPlanner WITH THIS VERSION
+    try {
+      const rawItems = window.localStorage.getItem(STORAGE_KEY);
+      if (rawItems) {
+        const parsed = JSON.parse(rawItems);
+        if (Array.isArray(parsed)) {
+          setPlannerItems(parsed);
+        }
+      }
+
+      const rawChecked = window.localStorage.getItem(CHECKED_KEY);
+      if (rawChecked) {
+        const parsed = JSON.parse(rawChecked);
+        if (Array.isArray(parsed)) {
+          setCheckedIngredients(parsed);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load planner:', err);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, []);
+
+  // -----------------------------------------------------
+  // SAVE TO LOCAL STORAGE (AFTER INITIAL LOAD)
+  // -----------------------------------------------------
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isInitialized) return;
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plannerItems));
+      window.localStorage.setItem(
+        CHECKED_KEY,
+        JSON.stringify(checkedIngredients)
+      );
+    } catch (err) {
+      console.error('Failed to save planner:', err);
+    }
+  }, [plannerItems, checkedIngredients, isInitialized]);
+
+  // -----------------------------------------------------
+  // ACTIONS
+  // -----------------------------------------------------
   const addRecipeToPlanner = async (recipe) => {
     if (!recipe?.id) return;
 
@@ -50,14 +94,13 @@ export function MealPlannerProvider({ children }) {
           slug: fullRecipe.slug,
           title: fullRecipe.title,
           cuisine: fullRecipe.cuisine,
-          ingredients: fullRecipe.ingredients || [], // ✅ guaranteed field
+          ingredients: fullRecipe.ingredients || [],
           includeIngredients: true
         }
       ];
     });
   };
 
-  // ... rest of the context stays the same ...
   const removeRecipeFromPlanner = (id) => {
     setPlannerItems((prev) => prev.filter((item) => item.id !== id));
   };

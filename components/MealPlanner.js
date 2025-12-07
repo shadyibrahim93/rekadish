@@ -310,7 +310,7 @@ export default function MealPlanner() {
         className='vr-section-header'
         style={{ position: 'relative' }}
       >
-        <h4 className='vr-section-title'>Meal Planner</h4>
+        <h4 className='vr-category__title'>Meal Planner</h4>
 
         {/* 3 DOT MENU BUTTON */}
         {hasItems && (
