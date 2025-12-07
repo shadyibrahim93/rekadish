@@ -6,13 +6,13 @@ const AdSlot = ({
   marginTop,
   marginBottom,
   placement,
-  index, // index in the list
+  index, // index in the list (for every N items)
   every // show ad every N items (optional)
 }) => {
   const [isDev, setIsDev] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false); // 👈 start hidden in prod
+  const [isDead, setIsDead] = useState(false); // 👈 fully remove if no ad
   const isLoaded = useRef(false);
-  const containerRef = useRef(null);
 
   const shouldRender =
     typeof every === 'number' && typeof index === 'number'
@@ -26,6 +26,7 @@ const AdSlot = ({
       const hostname = window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         setIsDev(true);
+        setIsVisible(true); // always visible in dev
         return;
       }
     }
@@ -55,7 +56,7 @@ const AdSlot = ({
     }
   }, [id, shouldRender]);
 
-  // Hide/remove empty ad container if nothing loads
+  // Decide whether to show or kill the slot (without initial blank gap)
   useEffect(() => {
     if (!shouldRender || isDev) return;
 
@@ -66,22 +67,24 @@ const AdSlot = ({
         `ezoic-pub-ad-placeholder-${id}`
       );
 
-      // If there's no placeholder or it's basically empty / zero height,
-      // assume no ad was filled and hide the slot.
+      // If ad filled → show it
       if (
-        !placeholder ||
-        placeholder.offsetHeight < 5 ||
-        placeholder.childElementCount === 0
+        placeholder &&
+        placeholder.offsetHeight >= 5 &&
+        placeholder.childElementCount > 0
       ) {
-        setIsVisible(false);
+        setIsVisible(true);
+      } else {
+        // No ad → completely remove
+        setIsDead(true);
       }
-    }, 4000); // wait a bit for Ezoic to attempt fill
+    }, 2500); // you can tweak this delay
 
     return () => clearTimeout(timeout);
   }, [id, shouldRender, isDev]);
 
-  // If this instance shouldn't render at all or we decided it's empty → bail
-  if (!shouldRender || (!isDev && !isVisible)) {
+  // If this instance isn't supposed to render at all, or we decided it's dead
+  if (!shouldRender || isDead) {
     return null;
   }
 
@@ -101,6 +104,7 @@ const AdSlot = ({
           fontWeight: 'bold',
           borderRadius: '8px',
           marginTop,
+          marginBottom: marginBottom || '1rem',
           minHeight: '120px'
         }}
       >
@@ -116,12 +120,12 @@ const AdSlot = ({
   // LIVE PRODUCTION SLOT
   return (
     <div
-      ref={containerRef}
       className='ezoic-ad-slot-container'
       style={{
-        marginTop,
-        marginBottom: marginBottom || '1rem'
-        // no minHeight in prod – let Ezoic set it if it fills
+        // 👇 keep it in the DOM for Ezoic, but don't show until we know an ad filled
+        display: isVisible ? 'block' : 'none',
+        marginTop: isVisible ? marginTop : 0,
+        marginBottom: isVisible ? marginBottom || '1rem' : 0
       }}
     >
       <div id={`ezoic-pub-ad-placeholder-${id}`} />
