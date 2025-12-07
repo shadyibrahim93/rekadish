@@ -11,20 +11,18 @@ const AdSlot = ({
   every // 👉 show ad every N items (optional)
 }) => {
   const [isDev, setIsDev] = useState(false);
-  const isLoaded = useRef(false); // Prevents double-firing Ezoic
-  const containerRef = useRef(null); // For hiding empty slots
+  const [isVisible, setIsVisible] = useState(true); // 👈 controls whether container renders
+  const isLoaded = useRef(false);
+  const containerRef = useRef(null);
 
-  // Should this particular instance actually render?
   const shouldRender =
     typeof every === 'number' && typeof index === 'number'
       ? (index + 1) % every === 0
       : true;
 
   useEffect(() => {
-    // If this instance isn't supposed to render, skip all Ezoic logic
     if (!shouldRender) return;
 
-    // 1. Check if we are in local development
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -33,20 +31,16 @@ const AdSlot = ({
       }
     }
 
-    // 2. Queue Ezoic Logic (The Safe Way)
     if (typeof window !== 'undefined') {
       window.ezstandalone = window.ezstandalone || {};
       window.ezstandalone.cmd = window.ezstandalone.cmd || [];
 
       window.ezstandalone.cmd.push(() => {
-        // Prevent React from running this twice
         if (isLoaded.current) return;
 
         try {
-          // Define the placeholder
-          window.ezstandalone.define(parseInt(id, 10)); // ensure ID is a number
+          window.ezstandalone.define(parseInt(id, 10));
 
-          // Logic: Enable if new, Refresh if existing
           if (!window.ezstandalone.enabled) {
             window.ezstandalone.enable();
             window.ezstandalone.display();
@@ -54,7 +48,7 @@ const AdSlot = ({
             window.ezstandalone.refresh();
           }
 
-          isLoaded.current = true; // Mark as done
+          isLoaded.current = true;
         } catch (err) {
           console.warn('Ezoic ad error:', err);
         }
@@ -62,8 +56,9 @@ const AdSlot = ({
     }
   }, [id, shouldRender]);
 
-  // Hide empty ad container if nothing loads (no more empty boxes)
+  // Hide/remove empty ad container if nothing loads
   useEffect(() => {
+    // don't do the empty-check in dev (we always want to see placeholder)
     if (!shouldRender || isDev) return;
 
     const el = containerRef.current;
@@ -72,15 +67,15 @@ const AdSlot = ({
     const timeout = setTimeout(() => {
       // If the slot has no height (or tiny), assume no ad filled
       if (!el.offsetHeight || el.offsetHeight < 10) {
-        el.style.display = 'none';
+        setIsVisible(false); // 👈 remove it entirely
       }
-    }, 4000); // wait a bit for Ezoic to fill
+    }, 4000);
 
     return () => clearTimeout(timeout);
   }, [id, isDev, shouldRender]);
 
-  // If this instance isn't supposed to render (e.g., not every 6th item)
-  if (!shouldRender) {
+  // If this instance shouldn't render or we've determined it's empty, bail out
+  if (!shouldRender || (!isDev && !isVisible)) {
     return null;
   }
 
@@ -89,7 +84,7 @@ const AdSlot = ({
     return (
       <div
         style={{
-          position: `${placement}`,
+          position: placement,
           top: '100px',
           backgroundColor: '#f0f0f0',
           color: '#666',
@@ -99,7 +94,7 @@ const AdSlot = ({
           justifyContent: 'center',
           fontWeight: 'bold',
           borderRadius: '8px',
-          marginTop: marginTop,
+          marginTop,
           marginBottom: marginBottom || '1rem',
           minHeight: height || '120px'
         }}
@@ -119,13 +114,12 @@ const AdSlot = ({
       ref={containerRef}
       className='ezoic-ad-slot-container'
       style={{
-        marginTop: marginTop,
+        marginTop,
         marginBottom: marginBottom || '1rem',
-        minHeight: height // Prevent layout shift (CLS)
+        minHeight: height
       }}
     >
-      {/* The ID here must match the placeholder ID generated in Ezoic Dashboard */}
-      <div id={`ezoic-pub-ad-placeholder-${id}`}></div>
+      <div id={`ezoic-pub-ad-placeholder-${id}`} />
     </div>
   );
 };
