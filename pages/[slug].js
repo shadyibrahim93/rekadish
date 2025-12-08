@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useEffect, useState, useRef } from 'react';
+import React, { Fragment, useEffect, useState, useRef } from 'react'; // Added React import
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import Breadcrumb from '../components/Breadcrumb';
@@ -7,6 +7,7 @@ import FilterPanel from '../components/FilterPanel';
 import { REVALIDATE_TIME, BRAND_NAME } from '../lib/constants';
 import SideBar from '../components/SideBar';
 import AdSlot from '../components/AdSlot';
+import { useModal } from '../components/ModalContext';
 
 const PER_PAGE = 24;
 
@@ -14,44 +15,43 @@ const PER_PAGE = 24;
 const SERVING_CONFIG = {
   breakfast: {
     servingTime: 'breakfast',
-    pageTitle: 'Best Breakfast Recipes & Easy Morning Ideas',
+    pageTitle: 'Easy Breakfast Recipes: Quick, Healthy & Savory Ideas',
     heroImage: '/images/categories/breakfast-category.webp',
     heading: 'Breakfast Recipes',
     metaDescription:
-      'Start your day right with our best breakfast recipes. From quick eggs to fluffy pancakes.'
+      'Start your day right with our collection of easy breakfast recipes. Explore quick eggs, fluffy pancakes, healthy smoothies, and meal-prep ideas for busy mornings.'
   },
   lunch: {
     servingTime: 'lunch',
-    pageTitle: 'Best Lunch Recipes & Easy Midday Ideas',
+    pageTitle: 'Lunch Recipes for Work & Home: Quick, Healthy & Tasty',
     heroImage: '/images/categories/lunch-category.webp',
     heading: 'Lunch Recipes',
     metaDescription:
-      'Find easy and delicious lunch recipes, from fresh salads to hearty bowls.'
+      'Upgrade your midday meal with our best lunch recipes. Find quick sandwiches, fresh salads, healthy meal-prep bowls, and kid-friendly ideas everyone will love.'
   },
   dinner: {
     servingTime: 'dinner',
-    pageTitle: 'Best Dinner Recipes & Easy Evening Ideas',
+    pageTitle: 'Easy Dinner Recipes: Quick Weeknight Meals & Family Favorites',
     heroImage: '/images/categories/dinner-category.webp',
     heading: 'Dinner Recipes',
     metaDescription:
-      'Discover comforting and easy dinner recipes to end your day on a delicious note.'
+      'Stuck on what to cook? Explore our easy dinner recipes for every night of the week. From 30-minute meals and one-pot wonders to comforting family favorites.'
   },
   dessert: {
     servingTime: 'dessert',
-    pageTitle: 'Best Dessert Recipes & Sweet Treat Ideas',
+    pageTitle: 'Dessert Recipes: Easy Sweets, Baking & Chocolate Treats',
     heroImage: '/images/categories/dessert-category.webp',
     heading: 'Dessert Recipes',
     metaDescription:
-      'Indulge your sweet tooth with our favorite dessert recipes, from quick treats to showstopper bakes.'
+      'Satisfy your sweet tooth with our delicious dessert recipes. Discover easy cookies, decadent cakes, no-bake treats, and chocolate desserts for any occasion.'
   }
 };
 
 // ----------------------------------------
-// 1. STATIC PATHS (BREAKFAST/LUNCH/DINNER/DESSERT)
+// 1. STATIC PATHS
 // ----------------------------------------
 export async function getStaticPaths() {
-  const slugs = Object.keys(SERVING_CONFIG); // ['breakfast', 'lunch', 'dinner', 'dessert']
-
+  const slugs = Object.keys(SERVING_CONFIG);
   return {
     paths: slugs.map((slug) => ({ params: { slug } })),
     fallback: 'blocking'
@@ -59,26 +59,21 @@ export async function getStaticPaths() {
 }
 
 // ----------------------------------------
-// 2. SERVER SIDE BUILD (ISR) PER SERVING_TIME
+// 2. SERVER SIDE BUILD (ISR)
 // ----------------------------------------
 export async function getStaticProps({ params }) {
   const rawSlug = params.slug;
   const slug = String(rawSlug).toLowerCase();
-
   const config = SERVING_CONFIG[slug];
 
-  // If slug is not one of breakfast/lunch/dinner/dessert => 404
   if (!config) {
     return { notFound: true };
   }
 
   const { servingTime } = config;
-
-  // Include `ingredients` so FilterPanel can build ingredient pills
   const SAFE_COLUMNS =
     'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine, ingredients';
 
-  // Fetch up to 300 recipes for this serving time
   const {
     data: allRecipes,
     count,
@@ -95,11 +90,9 @@ export async function getStaticProps({ params }) {
   }
 
   const safeAll = allRecipes || [];
-
-  // First page for initial render
   const initialRecipes = safeAll.slice(0, PER_PAGE);
 
-  // Max time for initial filter range
+  // 🆕 FIX: Safety check for Math.max to prevent -Infinity crash
   const initialMaxTime =
     safeAll.length > 0
       ? Math.max(...safeAll.map((r) => r.total_time || r.cook_time || 0))
@@ -111,7 +104,7 @@ export async function getStaticProps({ params }) {
       servingTime,
       initialRecipes,
       initialTotalCount: count || safeAll.length || 0,
-      initialMaxTime,
+      initialMaxTime: Number.isFinite(initialMaxTime) ? initialMaxTime : 60,
       initialAllRecipes: safeAll
     },
     revalidate: REVALIDATE_TIME || 3600
@@ -131,18 +124,16 @@ export default function ServingTimePage({
 }) {
   const config = SERVING_CONFIG[slug];
 
-  // Safety: if somehow config missing on client
+  // Early return if invalid (client-side safety)
   if (!config) {
     return <div className='vr-container'>Invalid serving time.</div>;
   }
 
   const { pageTitle, heroImage, heading, metaDescription } = config;
+  const { setShowIngredientsModal, setShowMealPlanner } = useModal();
 
-  // Initialize state with Server Data (Instant Load!)
   const [recipes, setRecipes] = useState(initialRecipes);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
-
-  // Used by FilterPanel to calculate counts/stats.
   const [allRecipes] = useState(initialAllRecipes);
 
   const [filters, setFilters] = useState({
@@ -159,7 +150,10 @@ export default function ServingTimePage({
 
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
-  const isLoadingRef = useRef(false); // to prevent double-loads in IntersectionObserver
+  const isLoadingRef = useRef(false);
+
+  // 🆕 FIX: AbortController ref
+  const abortControllerRef = useRef(null);
 
   // ----------------------------------------
   // HELPER: BUILD QUERY STRING
@@ -174,7 +168,6 @@ export default function ServingTimePage({
       params.set('ingredients', filters.ingredients.join(','));
 
     if (filters.difficulty) params.set('difficulty', filters.difficulty);
-
     if (filters.maxTime) params.set('max_time', filters.maxTime);
 
     return params.toString();
@@ -184,13 +177,23 @@ export default function ServingTimePage({
   // FETCH RECIPES PAGE (Client Logic)
   // ----------------------------------------
   const fetchRecipesPage = async (pageNumber, replace = false) => {
+    // 🆕 FIX: Cancel previous pending request
+    if (replace && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsLoading(true);
     isLoadingRef.current = true;
 
     const qs = buildQueryString(pageNumber);
 
     try {
-      const res = await fetch(`/api/recipes?${qs}`);
+      const res = await fetch(`/api/recipes?${qs}`, {
+        signal: controller.signal
+      });
       const json = await res.json();
       const data = json.data || [];
 
@@ -198,7 +201,13 @@ export default function ServingTimePage({
         setTotalCount(json.total_count || json.count || 0);
       }
 
-      setRecipes((prev) => (replace ? data : [...prev, ...data]));
+      // 🆕 FIX: Deduplicate recipes based on ID
+      setRecipes((prev) => {
+        const currentList = replace ? [] : prev;
+        const existingIds = new Set(currentList.map((r) => r.id));
+        const uniqueNewData = data.filter((r) => !existingIds.has(r.id));
+        return [...currentList, ...uniqueNewData];
+      });
 
       const currentCount = replace ? data.length : recipes.length + data.length;
       const serverTotal = json.total_count || json.count || 0;
@@ -214,6 +223,7 @@ export default function ServingTimePage({
 
       setPage(pageNumber);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error('Failed to fetch recipes', err);
     } finally {
       setIsLoading(false);
@@ -235,6 +245,7 @@ export default function ServingTimePage({
     setPage(1);
     setHasMore(true);
     fetchRecipesPage(1, true); // replace = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, servingTime]);
 
   // ----------------------------------------
@@ -249,7 +260,6 @@ export default function ServingTimePage({
         const entry = entries[0];
         if (!entry.isIntersecting) return;
 
-        // Prevent chaining multiple loads while one is in-flight
         if (isLoadingRef.current) return;
 
         fetchRecipesPage(page + 1);
@@ -259,6 +269,7 @@ export default function ServingTimePage({
 
     obs.observe(sentinelRef.current);
     return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, page, filters, servingTime]);
 
   return (
@@ -287,6 +298,23 @@ export default function ServingTimePage({
         />
         <div className='vr-category-hero__overlay'>
           <h1 className='vr-category-hero__title'>{pageTitle}</h1>
+          <p className='vr-hero__desc'>{metaDescription}</p>
+
+          <div className='vr-hero__actions'>
+            <button
+              className='vr-hero__badge'
+              onClick={() => setShowIngredientsModal(true)}
+            >
+              What Can I Cook?
+            </button>
+
+            <button
+              className='vr-hero__badge--light'
+              onClick={() => setShowMealPlanner(true)}
+            >
+              Open Planner 👀
+            </button>
+          </div>
         </div>
       </div>
 
@@ -302,30 +330,23 @@ export default function ServingTimePage({
           className='vr-category-main'
           ref={listRef}
         >
-          <div className='vr-category-main__header'>
+          <div className='vr-category__header'>
             <h3 className='vr-category__title'>{heading}</h3>
-            <span className='vr-category-main__meta'>
-              {totalCount
-                ? `${recipes.length} out of ${totalCount} recipes loaded`
-                : `${recipes.length} recipes loaded`}
-            </span>
+            <span className='vr-category-main__meta'>{totalCount} Recipes</span>
           </div>
 
           <div className='vr-category__grid'>
             {recipes.map((r, index) => (
-              <>
-                <RecipeCard
-                  key={r.id}
-                  recipe={r}
-                />
-
+              /* 🆕 FIX: Use Fragment with explicit key, fixed spelling typo */
+              <Fragment key={r.id}>
+                <RecipeCard recipe={r} />
                 <AdSlot
                   id='101'
                   position='in-feed'
                   index={index}
                   every={6}
                 />
-              </>
+              </Fragment>
             ))}
           </div>
 

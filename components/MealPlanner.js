@@ -7,7 +7,10 @@ import {
   FiPrinter,
   FiCopy,
   FiShare2,
-  FiX
+  FiX,
+  FiUsers,
+  FiChevronDown,
+  FiCheck
 } from 'react-icons/fi';
 import { useMealPlanner } from './MealPlannerContext';
 import formatFraction from '../utils/formatFraction';
@@ -201,8 +204,26 @@ export default function MealPlanner() {
   } = useMealPlanner();
 
   const [servings, setServings] = useState(1);
-  const [menuOpen, setMenuOpen] = useState(false); // Menu Toggle State
-  const menuRef = useRef(null); // To detect clicks outside
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showServingsMenu, setShowServingsMenu] = useState(false);
+  const menuRef = useRef(null);
+  const servingsRef = useRef(null);
+
+  // Handle Click Outside for BOTH menus
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Close Main Menu
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+      // Close Servings Menu
+      if (servingsRef.current && !servingsRef.current.contains(event.target)) {
+        setShowServingsMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuRef, servingsRef]);
 
   // Click Outside to close menu
   useEffect(() => {
@@ -226,6 +247,12 @@ export default function MealPlanner() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(SERVINGS_STORAGE_KEY, String(servings));
+  }, [servings]);
+
+  // Use a safe serving number for calculations (fallback to 1 if input is empty)
+  const calculationServings = useMemo(() => {
+    const num = Number(servings);
+    return num && num > 0 ? num : 1;
   }, [servings]);
 
   const aggregated = useMemo(
@@ -295,14 +322,50 @@ export default function MealPlanner() {
     window.print();
   };
 
-  const handleChangeServings = (delta) => {
-    setServings((prev) => Math.max(1, (prev || 1) + delta));
+  const handleSelectChange = (e) => {
+    setServings(Number(e.target.value));
   };
 
-  const handleServingsInputChange = (e) => {
-    const value = Number(e.target.value);
-    if (!Number.isNaN(value)) setServings(Math.min(99, Math.max(1, value)));
+  // Handle Text Input
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    if (val === '') {
+      setServings('');
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (!Number.isNaN(num) && num > 0) setServings(num);
   };
+
+  const handleServingsChange = (e) => {
+    const val = e.target.value;
+
+    // Allow empty string so user can clear the input to type "10"
+    if (val === '') {
+      setServings('');
+      return;
+    }
+
+    // Only allow positive integers
+    const num = parseInt(val, 10);
+    if (!Number.isNaN(num) && num > 0) {
+      setServings(num);
+    }
+  };
+
+  // UPDATED: Reset to 1 if they leave it empty on blur
+  const handleBlur = () => {
+    if (servings === '' || servings === 0) {
+      setServings(1);
+    }
+  };
+
+  const selectPreset = (num) => {
+    setServings(num);
+    setShowServingsMenu(false);
+  };
+
+  const commonServings = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20];
 
   return (
     <div className='vr-card vr-meal-planner'>
@@ -370,32 +433,69 @@ export default function MealPlanner() {
           </div>
 
           <div className='vr-meal-planner__controls no-print'>
-            <div className='vr-meal-planner__servings'>
-              <h5 className='vr-meal-planner__subheading'>Servings</h5>
-              <div className='vr-meal-planner__servings-controls'>
+            {/* ✨ UPDATED UI: Dropdown AND Input side-by-side */}
+            {/* ✨ PILL CONTAINER */}
+            <div className='vr-meal-planner__servings-wrapper'>
+              <FiUsers className='vr-servings-icon' />
+
+              {/* 1. CUSTOM DROPDOWN (Left Side) */}
+              <div
+                className='vr-custom-select-container'
+                ref={servingsRef}
+              >
                 <button
                   type='button'
-                  className='vr-meal-planner__servings-btn'
-                  onClick={() => handleChangeServings(-1)}
+                  className='vr-custom-select-trigger'
+                  onClick={() => setShowServingsMenu(!showServingsMenu)}
                 >
-                  −
+                  {/* Display 'Custom' if current number isn't in presets, otherwise show 'X ppl' */}
+                  <span className='vr-select-label'>
+                    {commonServings.includes(Number(servings))
+                      ? `Servings: ${servings}`
+                      : 'Custom'}
+                  </span>
+                  <FiChevronDown
+                    className={`vr-select-arrow ${
+                      showServingsMenu ? 'rotate' : ''
+                    }`}
+                  />
                 </button>
-                <input
-                  type='number'
-                  min={1}
-                  max={99}
-                  value={servings}
-                  onChange={handleServingsInputChange}
-                  className='vr-meal-planner__servings-input'
-                />
-                <button
-                  type='button'
-                  className='vr-meal-planner__servings-btn'
-                  onClick={() => handleChangeServings(1)}
-                >
-                  +
-                </button>
+
+                {/* THE CUSTOM DROPDOWN LIST */}
+                {showServingsMenu && (
+                  <div className='vr-custom-options'>
+                    <div className='vr-custom-scroll'>
+                      {commonServings.map((num) => (
+                        <button
+                          key={num}
+                          type='button'
+                          className={`vr-custom-option ${
+                            Number(servings) === num ? 'selected' : ''
+                          }`}
+                          onClick={() => selectPreset(num)}
+                        >
+                          {num} people
+                          {Number(servings) === num && <FiCheck />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Separator */}
+              <div className='vr-servings-divider'></div>
+
+              {/* 2. MANUAL INPUT (Right Side) */}
+              <input
+                type='number'
+                min='1'
+                value={servings}
+                onChange={handleInputChange}
+                onBlur={() => (!servings ? setServings(1) : null)}
+                className='vr-meal-planner__input'
+                placeholder='#'
+              />
             </div>
           </div>
 

@@ -36,6 +36,10 @@
     font-weight: 700;
     margin-bottom: 0.25rem;
     text-transform: capitalize;
+
+    @media screen and (max-width: 1078px) {
+      font-size: 1.25rem;
+    }
   }
 
   &__subtitle {
@@ -280,6 +284,9 @@
 
 .vr-category__container {
   width: 100%;
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 /* -----------------------------------------

@@ -1,7 +1,7 @@
 // pages/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import { useModal } from '../components/ModalContext';
@@ -258,7 +258,7 @@ export default function Home({
               className='vr-hero__badge--light'
               onClick={() => setShowMealPlanner(true)}
             >
-              Open Planner
+              Open Planner 👀
             </button>
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function Home({
               </div>
               <div className='vr-category__grid'>
                 {topRated.map((r, index) => (
-                  <>
+                  <Fragment key={r.id}>
                     <RecipeCard
                       key={r.id}
                       recipe={r}
@@ -296,7 +296,7 @@ export default function Home({
                       index={index}
                       every={6}
                     />
-                  </>
+                  </Fragment>
                 ))}
               </div>
             </section>
@@ -329,7 +329,7 @@ export default function Home({
                     </div>
                     <div className='vr-category__grid'>
                       {recipes.map((r, index) => (
-                        <>
+                        <Fragment key={r.id}>
                           <RecipeCard
                             key={r.id}
                             recipe={r}
@@ -341,7 +341,7 @@ export default function Home({
                             index={index}
                             every={6}
                           />
-                        </>
+                        </Fragment>
                       ))}
                     </div>
                   </div>
@@ -377,7 +377,7 @@ export default function Home({
                     </div>
                     <div className='vr-category__grid'>
                       {(cuisineRecipes[cuisineName] || []).map((r, index) => (
-                        <>
+                        <Fragment key={r.id}>
                           <RecipeCard
                             key={r.id}
                             recipe={r}
@@ -388,7 +388,7 @@ export default function Home({
                             index={index}
                             every={6}
                           />
-                        </>
+                        </Fragment>
                       ))}
                     </div>
                   </div>

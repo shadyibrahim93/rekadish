@@ -38,65 +38,208 @@
 }
 
 /* -------------------------------------------------
-   Controls (Servings + Clear)
+   Combined Servings Control (Custom Dropdown + Input)
 ------------------------------------------------- */
 
 .vr-meal-planner__controls {
+  padding-bottom: 0.75rem;
+}
+
+.vr-meal-planner__servings-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  /* The Pill Container */
+  background: var(--vr-planner-surface);
+  border: 1px solid var(--vr-planner-border);
+  border-radius: 10px;
+  height: 44px;
+  padding: 0 0.5rem;
+  z-index: 20; /* Ensure dropdown floats on top */
+
+  transition: border-color 0.2s, background-color 0.2s;
+
+  &:hover {
+    border-color: var(--vr-planner-text-muted);
+    background: var(--vr-planner-surface-hover);
+  }
+
+  /* Focus ring wrapper */
+  &:has(:focus) {
+    border-color: var(--vr-accent);
+    box-shadow: 0 0 0 2px rgba(255, 85, 0, 0.2);
+  }
+}
+
+.vr-servings-icon {
+  font-size: 1.1rem;
+  color: var(--vr-planner-text-muted);
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* --- Left Side: Custom Trigger Container --- */
+.vr-custom-select-container {
+  position: static;
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  flex: 1; /* Takes up remaining space */
+  height: 100%;
+}
+
+/* The Button that opens the menu */
+.vr-custom-select-trigger {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Pushes arrow to edge */
+  width: 100%;
+  height: 100%;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--vr-planner-text-sub);
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--vr-planner-text);
+  }
+}
+
+.vr-select-label {
+  white-space: nowrap;
+}
+
+/* Rotating Chevron */
+.vr-select-arrow {
+  font-size: 1rem;
+  color: var(--vr-planner-text-muted);
+  transition: transform 0.2s ease;
+  margin-left: auto; /* Ensure it stays right */
+
+  &.rotate {
+    transform: rotate(180deg);
+  }
+}
+
+/* --- The Floating Popup Menu --- */
+.vr-custom-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%; /* Matches container width or set specific px */
+  background: var(--vr-planner-dropdown-bg);
+  border: 1px solid var(--vr-planner-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 5px;
+  z-index: 100;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.vr-custom-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+
+  /* Custom Scrollbar */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--vr-planner-border);
+    border-radius: 4px;
+  }
+}
+
+.vr-custom-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.35rem 0;
-}
-
-.vr-meal-planner__servings {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1rem;
-}
-
-.vr-meal-planner__servings-label {
-  font-size: 0.9rem;
-  color: var(--vr-planner-text-muted);
-  font-weight: 600;
-}
-
-.vr-meal-planner__servings-controls {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-
-  background: var(--vr-planner-surface);
-  border: 1px solid var(--vr-planner-border);
-
-  padding: 0.15rem;
-  gap: 0.15rem;
-  overflow: hidden;
-}
-
-.vr-meal-planner__servings-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
   border: none;
-  background: var(--vr-accent);
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: left;
+
+  color: var(--vr-planner-text-sub);
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 6px;
+  transition: background 0.1s;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    filter: brightness(1.1);
+    background: var(--vr-planner-surface-hover);
+    color: var(--vr-planner-text);
   }
 
-  &:active {
-    transform: translateY(0);
-    box-shadow: none;
+  &.selected {
+    background: var(--vr-planner-surface);
+    color: var(--vr-accent);
+    font-weight: 700;
+  }
+}
+
+/* --- The Vertical Divider --- */
+.vr-servings-divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--vr-planner-border);
+  margin: 0 0.5rem;
+}
+
+/* --- Right Side: Manual Input --- */
+.vr-meal-planner__input {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+
+  /* Your requested width constraint */
+  max-width: 40px;
+
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--vr-planner-text);
+  text-align: center;
+
+  &:focus {
+    outline: none;
+  }
+
+  /* Hide spinners */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+}
+
+/* Legacy class fallback if needed */
+.vr-meal-planner__servings-input {
+  width: 3.2rem;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--vr-planner-text);
+  outline: none;
+  padding: 0 0.25rem;
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 }
 

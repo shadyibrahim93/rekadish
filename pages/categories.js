@@ -65,7 +65,7 @@ export async function getStaticProps() {
 // 2. COMPONENT (Instant Render)
 // ----------------------------------------
 export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
-  const { setShowIngredientsModal } = useModal();
+  const { setShowIngredientsModal, setShowMealPlanner } = useModal();
 
   /* ----------------------------------------
       SEO: keywords
@@ -221,6 +221,13 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
               onClick={() => setShowIngredientsModal(true)}
             >
               What Can I Cook?
+            </button>
+
+            <button
+              className='vr-hero__badge--light'
+              onClick={() => setShowMealPlanner(true)}
+            >
+              Open Planner 👀
             </button>
           </div>
         </div>

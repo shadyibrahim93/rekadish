@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useEffect, useState, useRef } from 'react';
+import { Fragment, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import AdSlot from '../components/AdSlot';
@@ -14,43 +14,67 @@ const PER_PAGE = 24;
 // 1. SERVER SIDE BUILD (ISR)
 // ----------------------------------------
 export async function getStaticProps() {
-  // --- A. Query Logic ---
-  // Fetch newest recipes first by default
-  const query = supabase
-    .from('recipes')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
+  try {
+    // --- A. Query Logic ---
+    const query = supabase
+      .from('recipes')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
 
-  // --- B. Fetch First Page (Limit 24) ---
-  const {
-    data: initialRecipes,
-    count,
-    error
-  } = await query.range(0, PER_PAGE - 1);
+    // --- B. Fetch First Page ---
+    const {
+      data: initialRecipes,
+      count,
+      error
+    } = await query.range(0, PER_PAGE - 1);
 
-  if (error) {
-    console.error('ISR Error:', error);
+    if (error) {
+      console.error('ISR Supabase Error:', error);
+      // Return 404 so Cloudflare stops trying to serve a broken page
+      return { notFound: true };
+    }
+
+    // --- C. Fetch Max Time (Safely) ---
+    // We add error handling here too
+    const { data: timeData, error: timeError } = await supabase
+      .from('recipes')
+      .select('total_time, cook_time')
+      .limit(100);
+
+    if (timeError) {
+      console.error('ISR Time Fetch Error:', timeError);
+      // Fallback gracefully instead of crashing
+    }
+
+    // FIX: Handle empty array to prevent -Infinity
+    let initialMaxTime = 60;
+
+    if (timeData && timeData.length > 0) {
+      const times = timeData.map((r) => r.total_time || r.cook_time || 0);
+      // Only run Math.max if we actually have numbers
+      if (times.length > 0) {
+        initialMaxTime = Math.max(...times);
+      }
+    }
+
+    // Double safety: Ensure it's a finite number
+    if (!Number.isFinite(initialMaxTime)) {
+      initialMaxTime = 60;
+    }
+
+    return {
+      props: {
+        initialRecipes: initialRecipes || [],
+        initialTotalCount: count || 0,
+        initialMaxTime
+      },
+      revalidate: REVALIDATE_TIME
+    };
+  } catch (err) {
+    console.error('ISR Critical Failure:', err);
+    // If everything explodes, return 404 or a fallback layout
     return { notFound: true };
   }
-
-  // --- C. Fetch Max Time (for initial filter state) ---
-  const { data: timeData } = await supabase
-    .from('recipes')
-    .select('total_time, cook_time')
-    .limit(100);
-
-  const initialMaxTime = timeData
-    ? Math.max(...timeData.map((r) => r.total_time || r.cook_time || 0))
-    : 60;
-
-  return {
-    props: {
-      initialRecipes: initialRecipes || [],
-      initialTotalCount: count || 0,
-      initialMaxTime
-    },
-    revalidate: REVALIDATE_TIME
-  };
 }
 
 // ----------------------------------------
@@ -190,10 +214,6 @@ export default function Recipes({
     setPage(1);
     setHasMore(true);
 
-    if (listRef.current) {
-      listRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-
     fetchRecipesPage(1, true);
   }, [filters]);
 
@@ -246,19 +266,15 @@ export default function Recipes({
           id='trending'
           ref={listRef}
         >
-          <div className='vr-category-main__header'>
+          <div className='vr-category__header'>
             <h3 className='vr-category__title'>All Recipes</h3>
 
-            <span className='vr-category-main__meta'>
-              {totalCount
-                ? `${recipes.length} out of ${totalCount} recipes loaded`
-                : `${recipes.length} recipes loaded`}
-            </span>
+            <span className='vr-category-main__meta'>{totalCount} Recipes</span>
           </div>
 
           <div className='vr-category__grid'>
             {recipes.map((r, index) => (
-              <>
+              <Fragment key={r.id}>
                 <RecipeCard
                   key={r.id}
                   recipe={r}
@@ -270,7 +286,7 @@ export default function Recipes({
                   index={index}
                   every={6}
                 />
-              </>
+              </Fragment>
             ))}
           </div>
 
