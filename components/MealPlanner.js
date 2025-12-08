@@ -353,9 +353,10 @@ export default function MealPlanner() {
       </div>
 
       {!hasItems && (
-        <div className='vr-meal-planner__empty'>
-          <p>No recipes added yet.</p>
-        </div>
+        <p class='vr-meal-planner__empty'>
+          Your planner is looking a little empty! Explore our recipes and click
+          the <strong>+</strong> icon to start building your menu.
+        </p>
       )}
 
       {hasItems && (

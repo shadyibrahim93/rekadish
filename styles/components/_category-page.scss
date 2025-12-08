@@ -51,7 +51,6 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) 320px;
   gap: 1rem;
-  margin-top: 1rem;
 
   @media (max-width: 1078px) {
     grid-template-columns: minmax(0, 1fr);
@@ -277,10 +276,6 @@
 .vr-category-main__meta {
   font-size: 0.85rem;
   color: #64748b;
-}
-
-.vr-section {
-  margin-bottom: 1rem;
 }
 
 .vr-category__container {

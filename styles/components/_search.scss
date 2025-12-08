@@ -260,20 +260,6 @@
   margin-bottom: 1.5rem;
 }
 
-.vr-search-results__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  @media (min-width: 1100px) {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 .vr-search-results__empty {
   color: #666;
   margin-top: 1rem;

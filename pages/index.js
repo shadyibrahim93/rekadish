@@ -83,7 +83,7 @@ export default function Home({
   cuisines = [],
   cuisineRecipes = {}
 }) {
-  const { setShowIngredientsModal } = useModal();
+  const { setShowIngredientsModal, setShowMealPlanner } = useModal();
 
   /* ----------------------------------------
       SEO KEYWORDS
@@ -253,6 +253,12 @@ export default function Home({
               onClick={() => setShowIngredientsModal(true)}
             >
               What Can I Cook?
+            </button>
+            <button
+              className='vr-hero__badge--light'
+              onClick={() => setShowMealPlanner(true)}
+            >
+              Open Planner
             </button>
           </div>
         </div>

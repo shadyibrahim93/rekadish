@@ -1,19 +1,71 @@
+/* -----------------------------------------
+   HERO SECTION
+------------------------------------------ */
 .vr-hero {
+  position: relative;
+  width: 100%;
+  height: 340px; // Combined height preference
+  border-radius: 14px;
+  overflow: hidden;
   margin-bottom: 1rem;
 
   &__image {
     width: 100%;
-    height: 340px;
+    height: 100%; // Fills the container
     object-fit: cover;
     display: block;
   }
 
   &__overlay {
     position: absolute;
-    left: 1.25rem;
-    bottom: 1.25rem;
+    inset: 0; // Covers the whole image to allow the gradient to work
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.2),
+      rgba(0, 0, 0, 0.7)
+    );
+    padding: 1.5rem; // Acts as the spacing from the edges
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; // Pushes content to the bottom
     color: white;
     text-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  }
+
+  &__top {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start; // Aligns icon to the right
+    z-index: 2;
+  }
+
+  &__icon-btn {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid #666;
+    backdrop-filter: blur(6px);
+    color: #fff;
+    padding: 0.55rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s ease-out;
+    font-size: 1.2rem;
+    top: 16px;
+    right: 16px;
+    position: absolute;
+    z-index: 2;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.28);
+      border-color: #fff;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
   }
 
   &__title {
@@ -45,48 +97,30 @@
     color: white;
     font-weight: 700;
     border: 2px solid var(--vr-accent);
+    text-decoration: none;
 
-    &:hover {
-      border: 2px solid white;
+    @media screen and (min-width: 1078px) {
+      padding: 0.5rem 0.9rem;
     }
-  }
 
-  &__top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    position: relative;
-  }
+    &--light {
+      border: 2px solid var(--vr-primary);
+      background-color: var(--vr-primary);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 8px;
 
-  &__icon-btn {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid #666;
-    backdrop-filter: blur(6px);
-    top: 12px;
-    right: 12px;
-    color: #fff;
-    padding: 0.55rem;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 2;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    transition: 0.2s ease-out;
-    font-size: 1.2rem;
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 7px #0000003f;
+        border-color: #fff;
+      }
+    }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.28);
+      transform: translateY(-2px);
+      box-shadow: 0 3px 7px #0000003f;
       border-color: #fff;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
     }
   }
 }

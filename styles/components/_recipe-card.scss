@@ -104,17 +104,13 @@
   position: absolute;
   top: 12px;
   right: 12px;
-
   width: 36px;
   height: 36px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.35);
-
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -126,14 +122,14 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 
   svg {
-    width: 18px;
-    height: 18px;
     stroke-width: 2.5;
+    font-size: 2rem;
   }
 
   &:hover {
     background: rgba(255, 255, 255, 0.35);
     transform: scale(1.07);
+    transform: rotate(90deg);
   }
 
   &.is-active {
@@ -364,4 +360,98 @@
 
 .vr-btn--guest {
   color: var(--vr-accent);
+}
+
+/* -------------------------------------------------
+   MOBILE SNACK DRAWER
+------------------------------------------------- */
+.vr-mobile-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  padding: 1rem;
+  pointer-events: none; /* Let clicks pass through when hidden */
+  display: flex;
+  justify-content: center;
+
+  /* Start hidden (pushed down) */
+  transform: translateY(120%);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy effect */
+}
+
+.vr-mobile-drawer.is-visible {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.vr-mobile-drawer__content {
+  background: #1a1a1a;
+  color: white;
+  width: 100%;
+  max-width: 400px; /* Prevent it from being too wide on tablets */
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  /* Safe area for iPhone X/11/12+ bottom bar */
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+.vr-mobile-drawer__text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vr-emoji {
+  font-size: 1.8rem;
+}
+
+.vr-mobile-drawer__text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.vr-mobile-drawer__text p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.vr-mobile-drawer__btn {
+  background: var(--vr-accent); /* Or your preferred brand color */
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 }

@@ -130,3 +130,9 @@ h4 {
     margin-left: 4px;
   }
 }
+
+button,
+a {
+  -webkit-text-decoration-skip: objects;
+  -webkit-appearance: none;
+}

@@ -2,12 +2,16 @@
 import { useState, useEffect } from 'react';
 import RecipeCard from './RecipeCard';
 import AdSlot from './AdSlot';
+import { useModal } from './ModalContext'; // 1. Import the hook
 
 export default function CreateFromIngredients() {
   const [ingredientInput, setIngredientInput] = useState('');
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // 2. Get the close function from context
+  const { setShowIngredientsModal } = useModal();
 
   function slugify(str) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -105,18 +109,21 @@ export default function CreateFromIngredients() {
       {!loading && recipes.length > 0 && (
         <div className='vr-category__grid'>
           {recipes.map((r, index) => (
-            <>
-              <RecipeCard
-                key={r.id}
-                recipe={r}
-              />
+            /* 3. Wrap Card in a generic container that handles the click. 
+               display: 'contents' preserves your grid layout. */
+            <div
+              key={r.id}
+              onClick={() => setShowIngredientsModal(false)}
+            >
+              <RecipeCard recipe={r} />
+
               <AdSlot
                 id='101'
                 position='in-feed'
                 index={index}
                 every={5}
               />
-            </>
+            </div>
           ))}
         </div>
       )}

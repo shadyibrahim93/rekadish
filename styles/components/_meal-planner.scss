@@ -5,11 +5,19 @@
 .vr-meal-planner {
   display: flex;
   flex-direction: column;
-  padding: 1.25rem;
+  padding: 1rem 1rem 0 1rem;
   border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--vr-border);
+
+  /* VARS APPLIED */
+  background: var(--vr-planner-bg);
+  color: var(--vr-planner-text);
+  box-shadow: var(--vr-planner-shadow);
+  border: 1px solid var(--vr-planner-border);
+
+  .vr-category__title {
+    color: #fff;
+    font-size: 1.2rem;
+  }
 }
 
 /* -------------------------------------------------
@@ -25,7 +33,7 @@
 .vr-meal-planner .vr-section-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--vr-text);
+  color: var(--vr-planner-text);
   margin-bottom: 0.5rem;
 }
 
@@ -48,7 +56,7 @@
 
 .vr-meal-planner__servings-label {
   font-size: 0.9rem;
-  color: var(--vr-muted);
+  color: var(--vr-planner-text-muted);
   font-weight: 600;
 }
 
@@ -56,8 +64,10 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: #fafafa;
-  border: 1px solid var(--vr-border);
+
+  background: var(--vr-planner-surface);
+  border: 1px solid var(--vr-planner-border);
+
   padding: 0.15rem;
   gap: 0.15rem;
   overflow: hidden;
@@ -76,12 +86,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    filter: brightness(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.1);
   }
 
   &:active {
@@ -97,7 +107,7 @@
   text-align: center;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--vr-text);
+  color: var(--vr-planner-text);
   outline: none;
   padding: 0 0.25rem;
   -moz-appearance: textfield;
@@ -113,11 +123,15 @@
 .vr-meal-planner__footer {
   position: sticky;
   bottom: 0px;
-  background-color: white;
+
+  /* Match main background variable */
+  background-color: var(--vr-planner-bg);
+
   z-index: 10;
 
   &:has(.vr-meal-planner__clear) {
-    padding: 0.85rem;
+    padding: 0.85rem 0;
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -135,7 +149,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
   justify-content: center;
 
   svg {
@@ -145,8 +159,8 @@
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-    filter: brightness(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.1);
   }
 
   &:active {
@@ -161,11 +175,17 @@
 
 .vr-meal-planner__empty {
   padding: 0.75rem;
-  color: var(--vr-muted);
+  color: var(--vr-planner-text-muted);
   font-size: 0.95rem;
   text-align: center;
-  background: #fafafa;
+
+  background: var(--vr-planner-surface);
+  border: 1px solid var(--vr-planner-surface);
   border-radius: 12px;
+
+  strong {
+    color: var(--vr-accent);
+  }
 }
 
 /* -------------------------------------------------
@@ -173,7 +193,7 @@
 ------------------------------------------------- */
 
 .vr-meal-planner__recipes {
-  border-top: 1px solid var(--vr-border);
+  border-top: 1px solid var(--vr-planner-border);
   padding-top: 1rem;
 
   ul {
@@ -190,12 +210,13 @@
   object-fit: cover;
   flex-shrink: 0;
   cursor: pointer;
+  border: 1px solid var(--vr-planner-border);
 }
 
 .vr-meal-planner__subheading {
   position: relative;
   font-size: 0.95rem;
-  color: var(--vr-muted);
+  color: var(--vr-planner-text-sub);
   font-weight: 700;
   margin-bottom: 1rem;
   text-transform: capitalize;
@@ -210,11 +231,15 @@
     gap: 0.4rem;
     cursor: pointer;
     transition: transform 0.18s ease, opacity 0.18s ease;
+    color: var(--vr-planner-text-muted);
 
     svg {
       transition: transform 0.18s ease;
     }
 
+    &:hover:not(:disabled) {
+      color: var(--vr-planner-text);
+    }
     &:hover:not(:disabled) svg {
       transform: translateY(-2px);
     }
@@ -233,49 +258,46 @@
 }
 
 /* -------------------------------------------------
-   Recipe Row Items (Fixed Alignment)
+   Recipe Row Items
 ------------------------------------------------- */
 
 .vr-meal-planner__recipe {
   padding: 0.65rem 0;
-  border-bottom: 1px dashed #e1e1e1;
+  border-bottom: 1px dashed var(--vr-planner-divider);
 
   &:last-child {
     border-bottom: none;
   }
 }
 
-/* Force full width on inner wrappers */
 .vr-meal-planner__recipe-main {
   width: 100%;
 }
 
-/* Flex container for the row content */
 .vr-meal-planner__recipe-info {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  gap: 0.75rem; /* Spacing between Checkbox > Title > X */
+  gap: 0.75rem;
 
-  /* The Link acts as the flexible spacer */
   a {
     flex-grow: 1;
-    min-width: 0; /* Allows text to truncate if needed */
+    min-width: 0;
     text-decoration: none;
     display: block;
   }
 }
 
 /* -------------------------------------------------
-   Stylish Checkbox
+   Stylish Checkbox (Dark Mode)
 ------------------------------------------------- */
 
 .vr-meal-planner__include {
   display: flex;
   align-items: center;
   cursor: pointer;
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
 
   input[type='checkbox'] {
     appearance: none;
@@ -285,12 +307,13 @@
     border: 2px solid var(--vr-accent);
     cursor: pointer;
     position: relative;
-    background: #fff;
+    background: transparent;
     transition: 0.15s ease;
-    margin: 0; /* Reset browser defaults */
+    margin: 0;
 
     &:hover {
       box-shadow: 0 0 6px rgba(255, 85, 0, 0.4);
+      border-color: #fff;
     }
 
     &:checked {
@@ -316,7 +339,7 @@
 .vr-meal-planner__recipe-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--vr-text);
+  color: var(--vr-planner-text);
   cursor: pointer;
   display: block;
 
@@ -327,13 +350,13 @@
 
 .vr-meal-planner__recipe-meta {
   font-size: 0.8rem;
-  color: var(--vr-muted);
+  color: var(--vr-planner-text-muted);
 }
 
-/* Remove "X" Button - Forced Right */
+/* Remove "X" Button */
 .vr-meal-planner__remove {
   background: transparent;
-  color: #e33;
+  color: #ff6b6b; /* Lighter red for dark background visibility */
   border: none;
   border-radius: 8px;
   padding: 0.35rem 0.55rem;
@@ -341,13 +364,11 @@
   line-height: 1;
   cursor: pointer;
   transition: 0.15s ease;
-
-  /* Alignment Force */
   margin-left: auto;
   flex-shrink: 0;
 
   &:hover {
-    background: #ffdbdb;
+    background: var(--vr-planner-border);
   }
 }
 
@@ -369,23 +390,22 @@
   gap: 0.5rem;
 }
 
-/* Row */
+/* Row (Dark Card) */
 .vr-meal-planner__ingredient-item {
   display: flex;
   gap: 0.75rem;
   padding: 0.65rem;
   border-radius: 12px;
-  background: #fdfdfd;
-  border: 1px solid #f1f1f1;
+
+  background: rgba(255, 255, 255, 0.03); /* Very subtle card bg */
+  border: 1px solid var(--vr-planner-surface);
   transition: 0.15s ease;
 
   &:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    background: #fff;
+    background: var(--vr-planner-surface-hover);
   }
 }
 
-/* Ingredient image */
 .vr-meal-planner__ingredient-media img {
   width: 46px;
   height: 46px;
@@ -393,11 +413,10 @@
   object-fit: cover;
 }
 
-/* Ingredient text */
 .vr-meal-planner__ingredient-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--vr-text);
+  color: var(--vr-planner-text);
 }
 
 .vr-meal-planner__ingredient-total {
@@ -410,7 +429,7 @@
 .vr-meal-planner__ingredient-notes {
   font-size: 0.8rem;
   margin-top: 0.25rem;
-  color: var(--vr-muted);
+  color: var(--vr-planner-text-muted);
 }
 
 .vr-meal-planner__ingredient-top {
@@ -421,26 +440,26 @@
 }
 
 /* -------------------------------------------------
-   Menu & Dropdown Styles
+   Menu & Dropdown Styles (Dark)
 ------------------------------------------------- */
 
 .vr-planner-menu-container {
   position: relative;
-  margin-left: auto; /* Pushes it to the right in the header */
+  margin-left: auto;
 }
 
 .vr-icon-btn--menu {
   background: transparent;
   border: none;
   font-size: 1.25rem;
-  color: #555;
+  color: var(--vr-planner-text-muted);
   cursor: pointer;
   padding: 8px 0px;
   border-radius: 50%;
   transition: background 0.2s;
 
   &:hover {
-    color: var(--vr-accent);
+    color: var(--vr-planner-text);
   }
 }
 
@@ -450,10 +469,13 @@
   right: 0;
   width: fit-content;
   min-width: 130px;
-  background: white;
-  border: 1px solid #eee;
+
+  background: var(--vr-planner-dropdown-bg);
+  border: 1px solid var(--vr-planner-border);
+  color: var(--vr-planner-text);
+
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--vr-planner-shadow);
   z-index: 50;
   overflow: hidden;
   animation: fadeIn 0.15s ease-out;
@@ -465,11 +487,11 @@
     gap: 10px;
     width: 100%;
     padding: 10px 15px;
-    background: white;
+    background: transparent;
     border: none;
     text-align: left;
     font-size: 0.9rem;
-    color: #333;
+    color: var(--vr-planner-text-sub);
     cursor: pointer;
     transition: background 0.1s;
 
@@ -478,7 +500,7 @@
     }
 
     &:hover {
-      background: #f7f7f7;
+      background: var(--vr-planner-border);
       color: var(--vr-accent);
 
       svg {
@@ -500,12 +522,11 @@
 }
 
 /* -------------------------------------------------
-   PRINT STYLES
-   (Hides web UI, formats as shopping list)
+   PRINT STYLES (Always White Paper)
 ------------------------------------------------- */
 
 .vr-print-header {
-  display: none; /* Hide on screen */
+  display: none;
 }
 
 @media print {
@@ -514,7 +535,8 @@
     size: auto;
   }
 
-  /* RESET EVERYTHING */
+  /* Reset vars to black/white for print inside this block if supported, 
+     but standard CSS overrides below are safer for printers */
   body {
     background: white;
     color: #111;
@@ -527,7 +549,6 @@
     visibility: hidden !important;
   }
 
-  /* SHOW PRINT AREA ONLY */
   .vr-print-area,
   .vr-print-area * {
     visibility: visible !important;
@@ -549,7 +570,7 @@
     display: none !important;
   }
 
-  /* ----------- PRINT HEADER ----------- */
+  /* HEADER */
   .vr-print-header {
     display: block !important;
     text-align: center;
@@ -575,7 +596,7 @@
     font-family: 'Helvetica Neue', sans-serif;
   }
 
-  /* ----------- SECTION HEADINGS ----------- */
+  /* SECTION HEADINGS */
   .vr-meal-planner__subheading {
     font-family: 'Helvetica Neue', sans-serif;
     font-size: 12px;
@@ -596,7 +617,7 @@
     display: none;
   }
 
-  /* ----------- RECIPES LIST ----------- */
+  /* RECIPES LIST */
   .vr-meal-planner__recipes {
     border: none;
     padding: 0;
@@ -616,11 +637,11 @@
 
   .vr-meal-planner__recipe-main,
   .vr-meal-planner__recipe-info {
-    display: block; /* Reset flex for print */
+    display: block;
   }
 
   .vr-meal-planner__include {
-    display: none; /* Hide checkbox input on print */
+    display: none;
   }
 
   .vr-meal-planner__recipe-title {
@@ -640,7 +661,6 @@
     color: #000;
   }
 
-  /* Append [x] or [ ] based on React attribute */
   .vr-meal-planner__recipe-title::after {
     content: attr(data-print-check);
     margin-left: 6px;
@@ -655,7 +675,7 @@
     content: ' [ ]';
   }
 
-  /* ----------- INGREDIENT LIST ----------- */
+  /* INGREDIENT LIST */
   .vr-meal-planner__ingredient-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -670,7 +690,7 @@
     border-top: none;
     border-left: none;
     border-right: none;
-    background: transparent;
+    background: transparent !important;
     border-radius: 0;
     position: relative;
     break-inside: avoid;
@@ -679,11 +699,9 @@
   }
 
   .vr-meal-planner__ingredient-media {
-    display: none; /* Hide ingredient images on print */
+    display: none;
   }
 
-  /* ----------- CHECK CIRCLE ----------- */
-  /* Manually drawn circle for checking off items */
   .vr-ingredient-check {
     position: absolute;
     left: 0;
@@ -702,7 +720,6 @@
     box-shadow: inset 0 0 0 2px #fff;
   }
 
-  /* ----------- INGREDIENT TEXT ----------- */
   .vr-meal-planner__ingredient-name {
     font-weight: bold;
     font-size: 12.5px;

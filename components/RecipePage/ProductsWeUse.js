@@ -56,7 +56,7 @@ export default function ProductsWeUse({
 
   return (
     <section
-      className='vr-section vr-card'
+      className='vr-section vr-card vr-products-we-use'
       itemScope
       itemType='https://schema.org/ItemList'
     >
@@ -103,42 +103,40 @@ export default function ProductsWeUse({
               </a>
             )}
 
-            <div className='vr-equipment__body'>
-              <h4
-                className='vr-equipment__name'
-                itemProp='name'
+            <h4
+              className='vr-equipment__name'
+              itemProp='name'
+            >
+              {product.label}
+            </h4>
+
+            {product.shortDescription && (
+              <p
+                className='vr-equipment__text'
+                itemProp='description'
               >
-                {product.label}
-              </h4>
+                {product.shortDescription}
+              </p>
+            )}
 
-              {product.shortDescription && (
-                <p
-                  className='vr-equipment__text'
-                  itemProp='description'
-                >
-                  {product.shortDescription}
-                </p>
-              )}
+            {/* ✅ Hide details in sidebar mode */}
+            {!isSidebarMode && product.details && (
+              <ul className='vr-equipment__details'>
+                {product.details.map((detail, i) => (
+                  <li key={i}>{detail}</li>
+                ))}
+              </ul>
+            )}
 
-              {/* ✅ Hide details in sidebar mode */}
-              {!isSidebarMode && product.details && (
-                <ul className='vr-equipment__details'>
-                  {product.details.map((detail, i) => (
-                    <li key={i}>{detail}</li>
-                  ))}
-                </ul>
-              )}
-
-              <a
-                href={buildAffiliateUrl(product.asin)}
-                target='_blank'
-                rel='nofollow sponsored noopener noreferrer'
-                className='vr-equipment__cta vr-search__button'
-                itemProp='url'
-              >
-                Buy Now
-              </a>
-            </div>
+            <a
+              href={buildAffiliateUrl(product.asin)}
+              target='_blank'
+              rel='nofollow sponsored noopener noreferrer'
+              className='vr-equipment__cta vr-search__button'
+              itemProp='url'
+            >
+              Buy Now
+            </a>
           </article>
         ))}
       </div>

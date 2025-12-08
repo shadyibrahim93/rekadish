@@ -1,8 +1,11 @@
+/* -----------------------------------------
+   MODAL BACKDROP
+------------------------------------------ */
 .vr-modal__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.75); /* Darker backdrop */
+  backdrop-filter: blur(8px); /* Stronger modern blur */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -10,17 +13,66 @@
   z-index: 9999;
 }
 
+/* -----------------------------------------
+   MODAL CONTENT CONTAINER
+------------------------------------------ */
 .vr-modal__content {
   background: #fff;
-  border-radius: 14px;
-  width: min(1078px, 100%);
+  border-radius: 18px;
+  width: min(1078px, 95%); /* Slightly wider responsiveness */
   max-height: 85vh;
-  overflow-y: auto;
+
+  /* Layout & Spacing */
   padding: 2rem;
   position: relative;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-  animation: vrModalIn 0.25s ease-out;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Deep shadow */
+  animation: vrModalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* Smoother pop */
 
+  /* -----------------------------------
+     MODERN SCROLLBAR (Dark)
+  ----------------------------------- */
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--vr-planner-border) transparent; /* Firefox */
+
+  &::-webkit-scrollbar {
+    width: 6px; /* Slim width */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 10px; /* Keep scrollbar away from very top/bottom edges */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 10px; /* Pill shape */
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+  }
+
+  /* -----------------------------------
+     MEAL PLANNER SPECIFIC OVERRIDES
+  ----------------------------------- */
+  /* When the modal contains the planner, we want the planner 
+     to fill the space perfectly without double padding */
+  &:has(.vr-meal-planner) {
+    background: var(--vr-planner-bg);
+    padding: 0rem;
+    scrollbar-width: none;
+
+    .vr-meal-planner {
+      margin: 2rem 3rem;
+      border: none;
+      box-shadow: none;
+    }
+  }
+
+  /* -----------------------------------
+     GENERIC STICKY HEADERS (Inside Modal)
+  ----------------------------------- */
   .vr-filter-container {
     position: sticky;
     top: -2rem;
@@ -34,32 +86,49 @@
     /* optional slight shadow on scroll */
     box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.08);
     margin-bottom: 1rem;
+    border-bottom: 1px solid var(--vr-planner-border);
+  }
+}
+
+/* -----------------------------------------
+   CLOSE BUTTON
+------------------------------------------ */
+.vr-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--vr-planner-text-muted, #aaa);
+  transition: all 0.2s ease;
+  z-index: 50; /* Ensure it sits above sticky headers */
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--vr-accent);
+    transform: rotate(90deg); /* Nice interaction */
+    border-color: var(--vr-accent);
   }
 }
 
 @keyframes vrModalIn {
   from {
-    transform: translateY(20px);
+    transform: translateY(15px) scale(0.98);
     opacity: 0;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.vr-modal__close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  font-size: 1.8rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #333;
-
-  &:hover {
-    color: var(--vr-primary);
-    transform: scale(1.1);
+    transform: translateY(0) scale(1);
   }
 }

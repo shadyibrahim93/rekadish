@@ -74,47 +74,28 @@ export default function CookingMode({
 
   return (
     <div
-      className='vr-cook'
+      className='vr-modal__backdrop'
       role='dialog'
       aria-modal='true'
       onMouseMove={handleHover}
       onClick={handleClick}
     >
-      <div className='vr-cook__panel'>
-        {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1rem'
-          }}
+      <div className='vr-modal__content'>
+        <button
+          onClick={onClose}
+          className='vr-modal__close'
         >
-          <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>
-              Cooking Mode
-            </div>
-            <div style={{ color: 'var(--vr-muted)' }}>
-              Step {step.step} of {instructions.length}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1rem'
-            }}
-          >
-            ✕
-          </button>
+          ×
+        </button>
+        {/* Header */}
+        <div className='vr-cook__title'>Cooking Mode</div>
+        <div className='vr-cook__steps'>
+          Step {step.step} of {instructions.length}
         </div>
 
         {/* Step text */}
         <div
           className='vr-cook__step'
-          style={{ marginBottom: '1.25rem' }}
           dangerouslySetInnerHTML={{ __html: renderText(step.text) }}
         ></div>
 
@@ -126,7 +107,7 @@ export default function CookingMode({
               position: 'absolute',
               left: hovered.x,
               top: hovered.y,
-              transform: 'translate(-50%, -100%)',
+              transform: 'translate(-80%, -170%)',
               pointerEvents: 'none'
             }}
           >
@@ -137,7 +118,7 @@ export default function CookingMode({
               height={70}
               style={{
                 borderRadius: '12px',
-                boxShadow: '0 4px 25px rgba(0,0,0,0.25)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
                 background: '#000'
               }}
             />
@@ -146,21 +127,22 @@ export default function CookingMode({
 
         {/* Controls */}
         <div className='vr-cook__controls'>
-          <button
-            className='vr-card'
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-          >
-            Back
-          </button>
-          <button
-            className='vr-card'
-            onClick={() =>
-              setIndex((i) => Math.min(instructions.length - 1, i + 1))
-            }
-          >
-            Next
-          </button>
-
+          <div>
+            <button
+              className='vr-card'
+              onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            >
+              Back
+            </button>
+            <button
+              className='vr-card'
+              onClick={() =>
+                setIndex((i) => Math.min(instructions.length - 1, i + 1))
+              }
+            >
+              Next
+            </button>
+          </div>
           <Timer />
         </div>
         {/* --- NEW AD SLOT --- */}

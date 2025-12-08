@@ -11,16 +11,23 @@ const CreateFromIngredients = dynamic(() => import('./CreateFromIngredients'), {
   ssr: false
 });
 
+const CreateMealPlanner = dynamic(() => import('./MealPlanner'), {
+  ssr: false
+});
+
 const ModalContext = createContext();
 
 export function ModalProvider({ children }) {
   const [showIngredientsModal, setShowIngredientsModal] = useState(false);
+  const [showMealPlanner, setShowMealPlanner] = useState(false);
 
   return (
     <ModalContext.Provider
       value={{
         showIngredientsModal,
-        setShowIngredientsModal
+        setShowIngredientsModal,
+        showMealPlanner,
+        setShowMealPlanner
       }}
     >
       {children}
@@ -29,6 +36,13 @@ export function ModalProvider({ children }) {
       {showIngredientsModal && (
         <VRModal onClose={() => setShowIngredientsModal(false)}>
           <CreateFromIngredients />
+        </VRModal>
+      )}
+
+      {/* 3. Render them together only when needed */}
+      {showMealPlanner && (
+        <VRModal onClose={() => setShowMealPlanner(false)}>
+          <CreateMealPlanner />
         </VRModal>
       )}
     </ModalContext.Provider>

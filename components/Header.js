@@ -7,10 +7,12 @@ import { useUser } from './UserContext';
 import { supabase } from '../lib/supabaseClient';
 import CreateFromIngredients from './CreateFromIngredients.js';
 import { BRAND_NAME } from '../lib/constants.js';
+import { useModal } from './ModalContext.js';
 
 export default function Header() {
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { setShowMealPlanner } = useModal();
   const { user, loading } = useUser();
   const router = useRouter();
 
@@ -160,6 +162,17 @@ export default function Header() {
                   alt='Desserts'
                 />
                 Desserts
+              </Link>
+              <Link
+                href='#'
+                onClick={(e) => [e.preventDefault(), setShowMealPlanner(true)]}
+              >
+                <img
+                  className='vr-menu__img'
+                  src='/images/menu/ingredients.webp'
+                  alt='Meal Planner'
+                />
+                Meal Planner
               </Link>
 
               <div className='vr-menu__auth'>
