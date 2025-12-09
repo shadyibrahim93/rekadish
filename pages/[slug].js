@@ -241,7 +241,6 @@ export default function ServingTimePage({
       return;
     }
 
-    setRecipes([]);
     setPage(1);
     setHasMore(true);
     fetchRecipesPage(1, true); // replace = true

@@ -313,10 +313,11 @@ export default function FilterPanel({
               <div className='vr-filter-drawer__header'>
                 <h3>Filter Recipes</h3>
                 <button
-                  className='vr-filter-drawer__close'
+                  className='vr-modal__close'
                   onClick={() => setShowMobileFilter(false)}
+                  aria-label='Close modal'
                 >
-                  &times;
+                  ×
                 </button>
               </div>
               {FilterContent}

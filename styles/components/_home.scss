@@ -28,7 +28,7 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
   &__header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
   }
 

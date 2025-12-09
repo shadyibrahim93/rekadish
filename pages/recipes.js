@@ -155,7 +155,8 @@ export default function Recipes({
       params.set('difficulty', filters.difficulty);
     }
 
-    if (filters.maxTime) {
+    // Only send max_time if the user actually narrowed it
+    if (filters.maxTime && filters.maxTime < initialMaxTime) {
       params.set('max_time', filters.maxTime);
     }
 
@@ -167,30 +168,33 @@ export default function Recipes({
   // ----------------------------------------
   const fetchRecipesPage = async (pageNumber, replace = false) => {
     setIsLoading(true);
-
     const qs = buildQueryString(pageNumber);
+
     try {
       const res = await fetch(`/api/recipes?${qs}`);
       const json = await res.json();
       const data = json.data || [];
-
-      if (replace || pageNumber === 1) {
-        setTotalCount(json.total_count || json.count || 0);
-      }
-
-      setRecipes((prev) => (replace ? data : [...prev, ...data]));
-
-      const currentCount = replace ? data.length : recipes.length + data.length;
       const serverTotal = json.total_count || json.count || 0;
 
-      if (
-        data.length < PER_PAGE ||
-        (serverTotal > 0 && currentCount >= serverTotal)
-      ) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setRecipes((prev) => {
+        const next = replace ? data : [...prev, ...data];
+        const currentCount = next.length;
+
+        if (
+          data.length < PER_PAGE ||
+          (serverTotal > 0 && currentCount >= serverTotal)
+        ) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+        if (replace || pageNumber === 1) {
+          setTotalCount(serverTotal);
+        }
+
+        return next;
+      });
 
       setPage(pageNumber);
     } catch (err) {
@@ -210,7 +214,6 @@ export default function Recipes({
       return;
     }
 
-    setRecipes([]);
     setPage(1);
     setHasMore(true);
 
