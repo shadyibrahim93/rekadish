@@ -104,7 +104,6 @@ const AdSlot = ({
           fontWeight: 'bold',
           borderRadius: '8px',
           marginTop,
-          marginBottom: marginBottom || '1rem',
           minHeight: '120px'
         }}
       >
