@@ -2,7 +2,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from './UserContext';
-import { FiMoreVertical, FiPlus, FiLogIn, FiTrash2 } from 'react-icons/fi';
+import {
+  FiMoreVertical,
+  FiPlus,
+  FiLogIn,
+  FiTrash2,
+  FiCheck
+} from 'react-icons/fi';
 import Link from 'next/link';
 
 const SYSTEM_CATEGORIES = [
@@ -27,6 +33,7 @@ export default function RecipeCategoryMenu({ recipeId }) {
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [draftSelections, setDraftSelections] = useState({});
 
   const recipeKey = String(recipeId || '');
 
@@ -40,6 +47,23 @@ export default function RecipeCategoryMenu({ recipeId }) {
     window.addEventListener('vr-menu-opened', handler);
     return () => window.removeEventListener('vr-menu-opened', handler);
   }, [recipeId]);
+
+  // When menu opens or collections change, sync draft selections for THIS recipe
+  useEffect(() => {
+    if (!open || !collections.length) return;
+
+    const initial = {};
+    const key = recipeKey;
+
+    collections.forEach((c) => {
+      const isSelected = Array.isArray(c.recipes)
+        ? c.recipes.some((id) => String(id) === key)
+        : false;
+      initial[c.id] = isSelected;
+    });
+
+    setDraftSelections(initial);
+  }, [open, collections, recipeKey]);
 
   // ------------------------------------------------
   // Toggle menu
@@ -143,9 +167,10 @@ export default function RecipeCategoryMenu({ recipeId }) {
       const current = col.recipes.map((x) => String(x));
       const exists = current.includes(recipeKey);
       const next = exists
-        ? current.filter((x) => x !== recipeKey)
-        : [...current, recipeKey];
+        ? current.filter((x) => x !== recipeKey) // removed
+        : [...current, recipeKey]; // added
 
+      // 1) Update DB
       const { error } = await supabase
         .from('user_collections')
         .update({ recipes: next })
@@ -154,7 +179,24 @@ export default function RecipeCategoryMenu({ recipeId }) {
 
       if (error) throw error;
 
-      await loadCollections();
+      // 2) Update local state so the checkboxes reflect latest
+      setCollections((prev) =>
+        prev.map((c) => (c.id === col.id ? { ...c, recipes: next } : c))
+      );
+
+      // 3) 🔔 Notify the rest of the app (Profile, etc.)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('vr-collections-updated', {
+            detail: {
+              userId: user.id,
+              collectionId: col.id,
+              recipeId: recipeKey,
+              removed: exists // true if we just removed this recipe
+            }
+          })
+        );
+      }
     } catch (err) {
       console.error('toggleCollection error:', err);
     } finally {
@@ -189,6 +231,74 @@ export default function RecipeCategoryMenu({ recipeId }) {
       await loadCollections();
     } catch (err) {
       console.error('deleteCollection error:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!user) return;
+    if (!collections.length) return;
+
+    setSaving(true);
+
+    try {
+      const key = recipeKey;
+
+      // We’ll build an updated copy of collections
+      const updatedCollections = [...collections];
+
+      // For each collection, see if membership changed for this recipe
+      for (const col of updatedCollections) {
+        const wasSelected = Array.isArray(col.recipes)
+          ? col.recipes.some((id) => String(id) === key)
+          : false;
+
+        const isSelected = !!draftSelections[col.id];
+
+        // No change for this collection => skip
+        if (wasSelected === isSelected) continue;
+
+        const current = Array.isArray(col.recipes)
+          ? col.recipes.map((id) => String(id))
+          : [];
+
+        const next = isSelected
+          ? [...current, key] // add
+          : current.filter((id) => id !== key); // remove
+
+        // Update DB for this collection
+        const { error } = await supabase
+          .from('user_collections')
+          .update({ recipes: next })
+          .eq('id', col.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Update local copy so our own menu stays in sync
+        col.recipes = next;
+      }
+
+      // Commit local collections
+      setCollections(updatedCollections);
+
+      // 🔔 Tell other pages (like Profile) that categories changed
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('vr-collections-saved', {
+            detail: {
+              userId: user.id,
+              recipeId: key
+            }
+          })
+        );
+      }
+
+      // Optional: close menu after save
+      setOpen(false);
+    } catch (err) {
+      console.error('handleSave error:', err);
     } finally {
       setSaving(false);
     }
@@ -272,7 +382,7 @@ export default function RecipeCategoryMenu({ recipeId }) {
             <span>Save to category</span>
             <button
               type='button'
-              className='vr-recipe-card__menu-close'
+              className='vr-modal__close'
               onClick={() => setOpen(false)}
             >
               ×
@@ -304,10 +414,13 @@ export default function RecipeCategoryMenu({ recipeId }) {
                       <label className='vr-recipe-card__menu-item'>
                         <input
                           type='checkbox'
-                          checked={col.recipes.some(
-                            (id) => String(id) === recipeKey
-                          )}
-                          onChange={() => toggleCollection(col)}
+                          checked={!!draftSelections[col.id]}
+                          onChange={() =>
+                            setDraftSelections((prev) => ({
+                              ...prev,
+                              [col.id]: !prev[col.id]
+                            }))
+                          }
                           disabled={saving}
                         />
                         <span>{col.name}</span>
@@ -352,6 +465,15 @@ export default function RecipeCategoryMenu({ recipeId }) {
                   disabled={saving}
                 >
                   <FiPlus />
+                </button>
+                <button
+                  type='button'
+                  className='vr-recipe-card__menu-save'
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  <FiCheck />
+                  <span>Save</span>
                 </button>
               </form>
             </>

@@ -159,13 +159,56 @@
 }
 
 .vr-recipe-card__menu-btn {
+  position: relative;
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 0.25rem 0rem;
+  padding: 0.25rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--vr-muted);
+  font-size: 1.2rem;
+  outline: none;
+
+  // smooth animation
+  transition: color 160ms ease, transform 160ms ease;
+
+  // soft circular halo behind the dots
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 50%;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--vr-accent) 10%, transparent);
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  svg {
+    display: block;
+    transition: transform 160ms ease;
+    transform-origin: center;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--vr-accent);
+    transform: translateY(-1px);
+
+    &::before {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    svg {
+      transform: scale(1.05);
+    }
+  }
 }
 
 .vr-recipe-card__menu-panel {
@@ -330,11 +373,19 @@
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      background: var(--vr-primary);
     }
 
     &:active {
       transform: translateY(0);
       box-shadow: none;
+    }
+
+    &.vr-recipe-card__menu-save {
+      width: 65px;
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
     }
   }
 }

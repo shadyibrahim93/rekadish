@@ -12,12 +12,53 @@ export default async function handler(req, res) {
         cuisine,
         ingredients,
         difficulty,
+        ids,
         max_time,
         match_type = 'all'
       } = req.query;
 
       const pageNum = Number(page) || 1;
       const perPageNum = Number(per_page) || 12;
+
+      // ------------------------------------------------
+      // 1) SPECIAL CASE: FETCH BY IDS
+      // ------------------------------------------------
+      if (ids) {
+        const idList = String(ids)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        if (idList.length === 0) {
+          return res.status(200).json({
+            data: [],
+            total_pages: 1,
+            total_count: 0
+          });
+        }
+
+        // Fetch all recipes whose id is in idList
+        let query = supabase.from('recipes').select('*');
+
+        const { data, error } = await query.in('id', idList);
+
+        if (error) {
+          console.error('Error fetching recipes by ids:', error);
+          return res.status(500).json({ error: error.message });
+        }
+
+        // Optional: reorder to match idList order
+        const byId = Object.fromEntries(
+          (data || []).map((r) => [String(r.id), r])
+        );
+        const ordered = idList.map((id) => byId[id]).filter(Boolean);
+
+        return res.status(200).json({
+          data: ordered,
+          total_pages: 1,
+          total_count: ordered.length
+        });
+      }
 
       let query = supabase.from('recipes').select('*', { count: 'exact' });
 

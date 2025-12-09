@@ -1,5 +1,5 @@
 // pages/profile.js
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../components/UserContext';
@@ -149,6 +149,72 @@ export default function ProfilePage() {
   };
 
   // -------------------------
+  // LOAD COLLECTIONS (reusable)
+  // -------------------------
+  const loadCollections = useCallback(async () => {
+    if (!user) return;
+
+    setCollectionsLoading(true);
+
+    let { data: cols } = await supabase
+      .from('user_collections')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+
+    cols = cols || [];
+
+    // Ensure system categories exist
+    const missing = SYSTEM_CATEGORIES.filter(
+      (sys) => !cols.some((c) => c.slug === sys.slug)
+    );
+
+    if (missing.length > 0) {
+      const { data: inserted } = await supabase
+        .from('user_collections')
+        .insert(
+          missing.map((m) => ({
+            user_id: user.id,
+            name: m.name,
+            slug: m.slug,
+            is_system: true,
+            recipes: []
+          }))
+        )
+        .select();
+
+      cols = [...cols, ...(inserted || [])];
+    }
+
+    // Normalize IDs
+    cols = cols.map((c) => ({
+      ...c,
+      recipes: Array.isArray(c.recipes) ? c.recipes.map((id) => String(id)) : []
+    }));
+
+    // Order: system first
+    cols.sort((a, b) => {
+      const aIndex = SYSTEM_ORDER.indexOf(a.slug);
+      const bIndex = SYSTEM_ORDER.indexOf(b.slug);
+
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+
+      return a.name.localeCompare(b.name);
+    });
+
+    setCollections(cols);
+    setCollectionsLoading(false);
+  }, [user]);
+
+  // run when user is ready
+  useEffect(() => {
+    if (!user) return;
+    loadCollections();
+  }, [user, loadCollections]);
+
+  // -------------------------
   // FETCH PROFILE
   // -------------------------
   useEffect(() => {
@@ -212,73 +278,31 @@ export default function ProfilePage() {
   }, []);
 
   // -------------------------
-  // LOAD COLLECTIONS
-  // AUTO-CREATE SYSTEM CATEGORIES IF MISSING
+  // REFRESH PROFILE WHEN CATEGORIES ARE SAVED
   // -------------------------
   useEffect(() => {
     if (!user) return;
+    if (typeof window === 'undefined') return;
 
-    async function loadCollections() {
-      setCollectionsLoading(true);
+    function handleCollectionsSaved(e) {
+      const detail = e.detail || {};
+      const { userId } = detail;
 
-      let { data: cols } = await supabase
-        .from('user_collections')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+      if (userId && userId !== user.id) return;
 
-      cols = cols || [];
-
-      // Ensure system categories exist
-      const missing = SYSTEM_CATEGORIES.filter(
-        (sys) => !cols.some((c) => c.slug === sys.slug)
-      );
-
-      if (missing.length > 0) {
-        const { data: inserted } = await supabase
-          .from('user_collections')
-          .insert(
-            missing.map((m) => ({
-              user_id: user.id,
-              name: m.name,
-              slug: m.slug,
-              is_system: true,
-              recipes: []
-            }))
-          )
-          .select();
-
-        cols = [...cols, ...(inserted || [])];
-      }
-
-      // Normalize recipe IDs to strings for consistency
-      cols = cols.map((c) => ({
-        ...c,
-        recipes: Array.isArray(c.recipes)
-          ? c.recipes.map((id) => String(id))
-          : []
-      }));
-
-      // Order: system categories first in our fixed order, then customs
-      cols.sort((a, b) => {
-        const aIndex = SYSTEM_ORDER.indexOf(a.slug);
-        const bIndex = SYSTEM_ORDER.indexOf(b.slug);
-
-        if (aIndex !== -1 && bIndex !== -1) {
-          return aIndex - bIndex;
-        }
-        if (aIndex !== -1) return -1;
-        if (bIndex !== -1) return 1;
-
-        return a.name.localeCompare(b.name);
-      });
-
-      setCollections(cols);
-      setCollectionsLoading(false);
+      // Just reload collections; recipes will follow via [collections] effect
+      loadCollections();
     }
 
-    loadCollections();
-  }, [user]);
+    window.addEventListener('vr-collections-saved', handleCollectionsSaved);
+
+    return () => {
+      window.removeEventListener(
+        'vr-collections-saved',
+        handleCollectionsSaved
+      );
+    };
+  }, [user, loadCollections]);
 
   // -------------------------
   // LOAD RECIPES FOR EACH CATEGORY
