@@ -2,6 +2,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic'; // Added for code splitting
 import { Fragment, useEffect } from 'react';
 import { IoShareOutline } from 'react-icons/io5';
 import { supabase } from '../../lib/supabaseClient';
@@ -9,14 +10,28 @@ import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 import TipsAndTricksCard from '../../components/TipsAndTricks/TipsAndTricksCard';
 import AdSlot from '../../components/AdSlot';
 import RecipeCard from '../../components/RecipeCard';
-import PostComments from '../../components/TipsAndTricks/PostComments';
 import { useUser } from '../../components/UserContext';
 import TipsSidebar from '../../components/TipsAndTricks/TipsSidebar';
 import Breadcrumb from '../../components/Breadcrumb.js';
 
+// Dynamic import for comments to reduce initial bundle size
+const PostComments = dynamic(
+  () => import('../../components/TipsAndTricks/PostComments'),
+  {
+    loading: () => <p>Loading comments...</p>,
+    ssr: false // Comments are usually client-side interaction heavy
+  }
+);
+
 // --------- STATIC PATHS ----------
 export async function getStaticPaths() {
-  const { data } = await supabase.from('blogs').select('slug').limit(500);
+  // OPTIMIZATION: Reduced limit from 500 to 100 to speed up build time.
+  // Older posts will be generated on-demand via fallback: 'blocking'
+  const { data } = await supabase
+    .from('blogs')
+    .select('slug')
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   const paths =
     data?.map((row) => ({
@@ -33,33 +48,33 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
   const { slug } = params;
 
-  const columns = [
+  // OPTIMIZATION: Split columns.
+  // We only need the heavy 'content' and 'toc' for the main post.
+  // Listing cards (related, latest, author) should NOT fetch the body text.
+  const baseColumns = [
     'id',
     'title',
     'slug',
     'description',
-    'content',
     'image_url',
     'tags',
-    'toc',
     'author_name',
     'author_slug',
     'author_image',
     'author_role',
-    'seo_title',
-    'seo_description',
     'created_at',
     'status',
     'view_count',
     'like_count',
-    'is_featured',
-    'related_recipe_ids'
+    'is_featured'
   ].join(', ');
 
-  // 1. Fetch main post
+  const fullPostColumns = `${baseColumns}, content, toc, seo_title, seo_description, related_recipe_ids`;
+
+  // 1. Fetch main post first (We need this to know tags/author for subsequent queries)
   const { data: post, error } = await supabase
     .from('blogs')
-    .select(columns)
+    .select(fullPostColumns)
     .eq('slug', slug)
     .single();
 
@@ -67,14 +82,94 @@ export async function getStaticProps({ params }) {
     return { notFound: true };
   }
 
-  // 2. Fetch some latest posts for "More Tips" suggestions
-  const { data: latest = [] } = await supabase
-    .from('blogs')
-    .select(columns)
-    .order('created_at', { ascending: false })
-    .limit(12);
+  // OPTIMIZATION: Prepare all auxiliary promises to run in PARALLEL
+  const promises = [];
 
-  // 3. Compute top tags from latest (if you ever want tags display, even without sidebar)
+  // 2. Fetch Latest (Promise 0)
+  promises.push(
+    supabase
+      .from('blogs')
+      .select(baseColumns) // Light query
+      .order('created_at', { ascending: false })
+      .limit(12)
+  );
+
+  // 3. Fetch Related by Tag (Promise 1)
+  if (post.tags && post.tags.length > 0) {
+    const primaryTag = post.tags[0];
+    promises.push(
+      supabase
+        .from('blogs')
+        .select(baseColumns)
+        .contains('tags', [primaryTag])
+        .neq('id', post.id)
+        .order('created_at', { ascending: false })
+        .limit(4)
+    );
+  } else {
+    promises.push(Promise.resolve({ data: [] }));
+  }
+
+  // 4. Fetch Author Posts (Promise 2)
+  if (post.author_name) {
+    promises.push(
+      supabase
+        .from('blogs')
+        .select(baseColumns)
+        .eq('author_name', post.author_name)
+        .neq('id', post.id)
+        .order('created_at', { ascending: false })
+        .limit(4)
+    );
+  } else {
+    promises.push(Promise.resolve({ data: [] }));
+  }
+
+  // 5. Fetch Related Recipes (Promise 3)
+  const rawIds = post.related_recipe_ids;
+  let recipeIds = [];
+
+  // Logic to parse IDs
+  if (Array.isArray(rawIds)) {
+    recipeIds = rawIds.filter(Boolean);
+  } else if (typeof rawIds === 'string' && rawIds.trim()) {
+    try {
+      const parsed = JSON.parse(rawIds);
+      recipeIds = Array.isArray(parsed)
+        ? parsed.filter(Boolean)
+        : rawIds
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+    } catch {
+      recipeIds = rawIds
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  if (recipeIds.length > 0) {
+    const recipeColumns =
+      'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+    promises.push(
+      supabase.from('recipes').select(recipeColumns).in('id', recipeIds)
+    );
+  } else {
+    promises.push(Promise.resolve({ data: [] }));
+  }
+
+  // OPTIMIZATION: Await all DB requests simultaneously
+  const [latestRes, relatedRes, authorRes, recipesRes] = await Promise.all(
+    promises
+  );
+
+  const latest = latestRes.data || [];
+  const related = relatedRes.data || [];
+  const authorPosts = authorRes.data || [];
+  const recipesData = recipesRes.data || [];
+
+  // Process Tags (Sync operation, fast)
   const tagCounts = {};
   latest.forEach((p) => {
     (p.tags || []).forEach((tag) => {
@@ -89,80 +184,11 @@ export async function getStaticProps({ params }) {
     .slice(0, 6)
     .map(([tag]) => tag);
 
-  // 4a. Related posts (based on first tag, excluding self)
-  let related = [];
-  if (post.tags && post.tags.length > 0) {
-    const primaryTag = post.tags[0];
-
-    const { data: relatedData = [] } = await supabase
-      .from('blogs')
-      .select(columns)
-      .contains('tags', [primaryTag])
-      .neq('id', post.id)
-      .order('created_at', { ascending: false })
-      .limit(4);
-
-    related = relatedData;
-  }
-
-  // 4b. Author's other posts (Fetch posts by same author, excluding self)
-  let authorPosts = [];
-  if (post.author_name) {
-    const { data: authorData = [] } = await supabase
-      .from('blogs')
-      .select(columns)
-      .eq('author_name', post.author_name)
-      .neq('id', post.id) // Ensure we don't show the current post
-      .order('created_at', { ascending: false })
-      .limit(4);
-
-    authorPosts = authorData;
-  }
-
-  // 5. Related recipes (manual internal linking via IDs)
-  const recipeColumns =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
-
+  // Re-order recipes to match the specific order in recipeIds
   let relatedRecipes = [];
-  let recipeIds = [];
-
-  const rawIds = post.related_recipe_ids;
-
-  // Normalize related_recipe_ids into a clean array of IDs
-  if (Array.isArray(rawIds)) {
-    // Postgres uuid[] / text[]
-    recipeIds = rawIds.filter(Boolean);
-  } else if (typeof rawIds === 'string' && rawIds.trim()) {
-    // Could be JSON string or comma separated string
-    try {
-      const parsed = JSON.parse(rawIds);
-      if (Array.isArray(parsed)) {
-        recipeIds = parsed.filter(Boolean);
-      } else {
-        recipeIds = rawIds
-          .split(',')
-          .map((str) => str.trim())
-          .filter(Boolean);
-      }
-    } catch {
-      recipeIds = rawIds
-        .split(',')
-        .map((str) => str.trim())
-        .filter(Boolean);
-    }
-  }
-
-  if (recipeIds.length > 0) {
-    const { data: recipesData, error: recipesError } = await supabase
-      .from('recipes')
-      .select(recipeColumns)
-      .in('id', recipeIds);
-
-    if (!recipesError && recipesData) {
-      // Preserve order from recipeIds
-      const byId = new Map(recipesData.map((r) => [r.id, r]));
-      relatedRecipes = recipeIds.map((id) => byId.get(id)).filter(Boolean);
-    }
+  if (recipesData.length > 0) {
+    const byId = new Map(recipesData.map((r) => [r.id, r]));
+    relatedRecipes = recipeIds.map((id) => byId.get(id)).filter(Boolean);
   }
 
   return {
@@ -188,9 +214,6 @@ export default function TipsAndTricksPost({
   relatedRecipes = []
 }) {
   const { user } = useUser();
-
-  // ---------- VIEW COUNT TRACKING ----------
-  // Set this to false later if you want to stop counting views on localhost
   const TRACK_VIEWS_ON_LOCAL = false;
 
   useEffect(() => {
@@ -204,21 +227,21 @@ export default function TipsAndTricksPost({
         hostname === '127.0.0.1' ||
         hostname === '[::1]';
 
-      // If we're on localhost AND we've disabled local tracking, bail out.
       if (isLocalhost && !TRACK_VIEWS_ON_LOCAL) return;
 
       try {
-        await supabase
+        // Fire and forget - don't await this to block UI
+        supabase
           .from('blogs')
           .update({ view_count: (post.view_count || 0) + 1 })
-          .eq('id', post.id);
+          .eq('id', post.id)
+          .then(() => {});
       } catch (err) {
         console.error('Failed to track blog view', err);
       }
     };
 
     incrementViewCount();
-    // We only want to run once per mount for this post id.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.id]);
 
@@ -512,7 +535,7 @@ export default function TipsAndTricksPost({
               />
             </section>
 
-            {/* Related recipes (internal linking via RecipeCard) */}
+            {/* Related recipes */}
             {relatedRecipes && relatedRecipes.length > 0 && (
               <section
                 className='vr-section vr-tips-section'
@@ -555,7 +578,7 @@ export default function TipsAndTricksPost({
               <section className='vr-section vr-tips-section'>
                 <div className='vr-category__header vr-tips-section__header'>
                   <h2 className='vr-category__title'>
-                    More From {authorFirstName}'s Kitchen
+                    More From {authorFirstName}&apos;s Kitchen
                   </h2>
                 </div>
                 <div className='vr-category__grid vr-tips-grid'>
@@ -588,7 +611,7 @@ export default function TipsAndTricksPost({
               </section>
             )}
 
-            {/* COMMENTS FOR THIS POST */}
+            {/* COMMENTS - Dynamic Load */}
             <section className='vr-section vr-tips-section'>
               <PostComments
                 postId={post.id}
