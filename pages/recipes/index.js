@@ -1,12 +1,12 @@
 import Head from 'next/head';
 import { Fragment, useEffect, useState, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import RecipeCard from '../components/RecipeCard';
-import AdSlot from '../components/AdSlot';
-import FilterPanel from '../components/FilterPanel';
-import MealPlanner from '../components/MealPlanner';
-import { REVALIDATE_TIME, BRAND_NAME } from '../lib/constants';
-import SideBar from '../components/SideBar';
+import { supabase } from '../../lib/supabaseClient';
+import RecipeCard from '../../components/RecipeCard';
+import AdSlot from '../../components/AdSlot';
+import FilterPanel from '../../components/FilterPanel';
+import MealPlanner from '../../components/MealPlanner';
+import { REVALIDATE_TIME, BRAND_NAME } from '../../lib/constants';
+import SideBar from '../../components/SideBar';
 
 const PER_PAGE = 24;
 

@@ -1,0 +1,783 @@
+/* =======================================
+   TIPS & TRICKS – SHARED LAYOUT
+   Uses site variables:
+   --vr-bg, --vr-surface, --vr-muted, --vr-accent,
+   --vr-primary, --vr-secondary, --vr-shadow, --vr-radius
+======================================= */
+
+.vr-tips {
+  &.vr-tips--index {
+    padding-bottom: 3rem;
+  }
+
+  &.vr-tips--post {
+    padding-bottom: 4rem;
+  }
+
+  .vr-home-layout {
+    gap: 2rem;
+
+    .vr-hero__icon-btn {
+      border-color: #adadad;
+    }
+
+    .vr-tips-post__header {
+      margin-bottom: 0;
+    }
+
+    .vr-tips-post {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+
+      .vr-tips-layout {
+        margin-top: 0;
+        flex: 1;
+      }
+    }
+  }
+}
+
+.vr-tips-layout {
+  margin-top: 2.5rem;
+  column-gap: 2.5rem;
+  align-items: stretch;
+}
+
+/* When stacked, sidebar goes below main content */
+@media (max-width: 960px) {
+  .vr-tips-layout {
+    flex-direction: column;
+  }
+
+  .vr-tips-layout .vr-sidebar {
+    max-width: 100%;
+    width: 100%;
+    margin-top: 2rem;
+  }
+}
+
+/* =======================================
+   HERO – TIPS & TRICKS
+======================================= */
+
+.vr-tips-hero {
+  position: relative;
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  background: var(--vr-secondary);
+}
+
+.vr-tips-hero__image {
+  filter: brightness(0.6);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vr-tips-hero__overlay {
+  padding: 2.5rem 2.5rem 2.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: flex-start;
+  color: #ffffff;
+  background: linear-gradient(
+    120deg,
+    rgba(30, 41, 59, 0.9),
+    rgba(97, 178, 124, 0.8)
+  );
+}
+
+.vr-tips-hero__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.18rem 0.7rem;
+  border-radius: 999px;
+}
+
+.vr-tips-hero__title {
+  max-width: 28rem;
+  color: #ffffff;
+}
+
+.vr-tips-hero__desc {
+  max-width: 36rem;
+  font-size: 0.98rem;
+  color: #f9fafb;
+}
+
+.vr-tips-hero__tags {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* =======================================
+   INDEX – SECTIONS & GRIDS
+======================================= */
+
+.vr-tips-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.vr-tips-section__subtitle {
+  font-size: 0.9rem;
+  color: var(--vr-muted);
+}
+
+.vr-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.75rem;
+}
+
+.vr-tips-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.vr-tips-tag-block {
+  padding-top: 0;
+}
+
+.vr-tips-tag-header {
+  margin-bottom: 1rem;
+}
+
+/* =======================================
+   TIPS CARD – MODERN LIGHT STYLE
+======================================= */
+
+.vr-tips-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+  background: var(--vr-surface);
+  box-shadow: var(--vr-shadow);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.vr-tips-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.16);
+  border-color: rgba(255, 107, 107, 0.4); /* uses accent tone */
+}
+
+.vr-tips-card__media {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+}
+
+.vr-tips-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+  transition: transform 0.3s ease;
+}
+
+.vr-tips-card:hover .vr-tips-card__media img {
+  transform: scale(1.06);
+}
+
+.vr-tips-card__body {
+  padding: 0.9rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.vr-tips-card__eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vr-muted);
+}
+
+.vr-tips-card__title {
+  font-size: 1rem;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--vr-secondary);
+}
+
+.vr-tips-card__title a {
+  color: inherit;
+}
+
+.vr-tips-card__excerpt {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--vr-muted);
+  flex: 1;
+}
+
+.vr-tips-card__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.vr-tips-card__author {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.vr-tips-card__avatar {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vr-tips-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vr-tips-card__author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.vr-tips-card__author-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--vr-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vr-tips-card__meta-line {
+  font-size: 0.8rem;
+  color: var(--vr-muted);
+}
+
+.vr-tips-card__meta {
+  font-size: 0.8rem;
+  color: var(--vr-muted);
+  white-space: nowrap;
+}
+
+/* =======================================
+   POST PAGE – HEADER & META
+======================================= */
+
+.vr-tips-post__header {
+  margin-bottom: 2.5rem;
+}
+
+.vr-tips-post__back {
+  font-size: 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+.vr-tips-post__back a {
+  color: var(--vr-muted);
+}
+
+/* HERO WRAPPER */
+.vr-tips-post__hero {
+  position: relative;
+  border-radius: var(--vr-radius);
+  overflow: hidden;
+  background: var(--vr-secondary);
+  max-height: 300px;
+}
+
+/* HERO IMAGE */
+.vr-tips-post__hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6);
+}
+
+/* OVERLAY LAYER */
+.vr-tips-post__hero-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 1.8rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #ffffff;
+  background: linear-gradient(
+    120deg,
+    rgba(15, 23, 42, 0.9),
+    rgba(97, 178, 124, 0.7)
+  );
+}
+
+/* TOP: EYEBROW + TITLE */
+.vr-tips-post__hero-top {
+  max-width: 40rem;
+}
+
+.vr-tips-post__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.18rem 0.7rem;
+  border-radius: 999px;
+}
+
+.vr-tips-post__hero-title {
+  margin: 0.6rem 0 0;
+  font-size: 1.9rem;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+/* BOTTOM: AUTHOR META + SHARE */
+.vr-tips-post__hero-bottom {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.vr-tips-post__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.vr-tips-post__author-avatar {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.vr-tips-post__author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vr-tips-post__meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.vr-tips-post__author-line {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f9fafb;
+}
+
+.vr-tips-post__author-role {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.vr-tips-post__meta-line {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.vr-tips-post__meta-separator {
+  opacity: 0.8;
+}
+
+/* SHARE BUTTON IN HERO */
+.vr-tips-post__hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vr-tips-post__share {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background: #ffffff;
+  color: var(--vr-secondary);
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.vr-tips-post__share:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.28);
+}
+
+/* Responsive hero adjustments */
+@media (max-width: 768px) {
+  .vr-tips-post__hero-overlay {
+    padding: 1.4rem 1.3rem;
+  }
+
+  .vr-tips-post__hero-title {
+    font-size: 1.55rem;
+  }
+
+  .vr-tips-post__hero-bottom {
+    align-items: flex-start;
+  }
+
+  .vr-tips-post__meta {
+    align-items: flex-start;
+  }
+}
+
+/* =======================================
+   POST PAGE – BODY TYPOGRAPHY
+======================================= */
+
+.vr-tips-post__body .vr-article__content {
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: var(--vr-secondary);
+}
+
+/* Paragraphs */
+.vr-tips-post__body .vr-article__content p {
+  margin: 0.85rem 0;
+}
+
+/* Headings */
+.vr-tips-post__body .vr-article__content h2 {
+  margin-top: 2.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--vr-secondary);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding-bottom: 0.35rem;
+}
+
+.vr-tips-post__body .vr-article__content h3 {
+  margin-top: 1.7rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--vr-secondary);
+}
+
+/* Lists */
+.vr-tips-post__body .vr-article__content ul,
+.vr-tips-post__body .vr-article__content ol {
+  margin: 0.5rem 0 1.1rem;
+  padding-left: 1.35rem;
+}
+
+.vr-tips-post__body .vr-article__content li {
+  margin-bottom: 0.4rem;
+}
+
+/* Strong / emphasis */
+.vr-tips-post__body .vr-article__content strong {
+  font-weight: 600;
+}
+
+/* Links */
+.vr-tips-post__body .vr-article__content a {
+  color: var(--vr-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.15em;
+}
+
+/* Blockquotes – nice callout style */
+.vr-tips-post__body .vr-article__content blockquote {
+  margin: 1.4rem 0;
+  padding: 0.9rem 1.1rem;
+  border-left: 3px solid var(--vr-accent);
+  background: rgba(255, 107, 107, 0.04);
+  border-radius: 8px;
+  color: var(--vr-secondary);
+  font-style: italic;
+}
+
+/* Code snippets (inline) */
+.vr-tips-post__body .vr-article__content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.9em;
+  background: rgba(15, 23, 42, 0.04);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+/* Tables (if any) */
+.vr-tips-post__body .vr-article__content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.vr-tips-post__body .vr-article__content th,
+.vr-tips-post__body .vr-article__content td {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 0.45rem 0.6rem;
+}
+
+.vr-tips-post__body .vr-article__content th {
+  background: rgba(15, 23, 42, 0.02);
+  text-align: left;
+  font-weight: 600;
+}
+
+/* =======================================
+   SIDEBAR – TIPS & TRICKS
+======================================= */
+
+.vr-tips-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.vr-tips-sidebar__section {
+  background: var(--vr-surface);
+  border-radius: var(--vr-radius);
+  box-shadow: var(--vr-shadow);
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.vr-tips-sidebar__section--toc {
+  position: sticky;
+  top: 5.3rem;
+  z-index: 1;
+}
+
+.vr-tips-sidebar__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--vr-secondary);
+}
+
+.vr-tips-sidebar__list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+
+.vr-tips-post__toc-inner {
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  background: var(--vr-surface, #ffffff);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.vr-tips-post__toc-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.vr-tips-post__toc-intro {
+  font-size: 0.9rem;
+  color: var(--vr-muted, #666);
+  margin-bottom: 0.75rem;
+}
+
+.vr-tips-post__toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vr-tips-post__toc-item {
+  margin-bottom: 0.35rem;
+}
+
+.vr-tips-post__toc-item--child {
+  margin-left: 1rem;
+  font-size: 0.9rem;
+}
+
+.vr-tips-post__toc-item a {
+  text-decoration: none;
+  color: var(--vr-link, var(--vr-accent));
+}
+
+.vr-tips-post__toc-item a:hover {
+  text-decoration: underline;
+}
+
+/* Popular tags */
+.vr-tips-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.vr-tips-tags-list__item {
+  margin: 0;
+}
+
+.vr-tips-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(255, 107, 107, 0.07);
+  color: var(--vr-secondary);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  text-decoration: none;
+}
+
+.vr-tips-tag-pill:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+/* Recent tips */
+.vr-tips-recent-list__item {
+  margin-bottom: 0.35rem;
+}
+
+.vr-tips-recent-list__link {
+  font-size: 0.9rem;
+  color: var(--vr-secondary);
+  text-decoration: none;
+}
+
+.vr-tips-recent-list__link:hover {
+  color: var(--vr-accent);
+}
+
+/* Products & Ad */
+.vr-tips-sidebar__section--products {
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+}
+
+.vr-tips-sidebar__ad {
+  margin-top: 0.25rem;
+}
+
+.vr-tips-card__footer {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+
+  /* Let the hover feel like a “button” strip */
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+/* Avatar ring + subtle lift on hover */
+.vr-tips-card__avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.vr-tips-card__avatar::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.35);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Right-side meta + arrow */
+.vr-tips-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--vr-muted);
+  white-space: nowrap;
+}
+
+.vr-tips-card__meta::after {
+  content: '→';
+  font-size: 0.85rem;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* HOVER STATE – main sauce */
+.vr-tips-card__footer:hover {
+  border-color: rgba(255, 107, 107, 0.35);
+  transform: translateY(-1px);
+}
+
+.vr-tips-card__footer:hover .vr-tips-card__author-name {
+  color: var(--vr-accent);
+}
+
+.vr-tips-card__footer:hover .vr-tips-card__meta-line {
+  color: var(--vr-secondary);
+}
+
+.vr-tips-card__footer:hover .vr-tips-card__avatar::after {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.16);
+}
+
+.vr-tips-card__footer:hover .vr-tips-card__meta::after {
+  opacity: 1;
+  transform: translateX(0);
+}

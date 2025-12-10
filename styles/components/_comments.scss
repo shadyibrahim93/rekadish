@@ -4,13 +4,10 @@
 .vr-card--comments {
   border-radius: 18px;
   padding: 1.75rem 1.5rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.96),
-    rgba(255, 240, 240, 0.96)
-  );
+  background: radial-gradient(circle at top left, #61b26b2e, transparent 55%),
+    radial-gradient(circle at bottom right, #f697c03d, transparent 60%),
+    var(--vr-surface);
   box-shadow: 0 14px 35px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 107, 107, 0.28);
 
   .vr-category__title {
     font-size: 1.2rem;

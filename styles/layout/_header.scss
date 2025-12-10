@@ -15,7 +15,7 @@
 
     @media (min-width: 768px) {
       padding: 1rem 2rem;
-      gap: 1.5rem;
+      gap: 1rem;
     }
   }
 
@@ -57,6 +57,7 @@
   &__actions {
     display: flex;
     align-items: center;
+    gap: 1rem; /* Space between profile and menu icons */
   }
 
   &__icon-btn {
@@ -67,33 +68,85 @@
   }
 }
 
+/* --- Shared Button Styles (Profile & Menu) --- */
+.vr-header__profile-btn,
 .vr-header__menu-btn {
-  width: 32px;
-  height: 28px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: none;
-  background: transparent;
-  padding: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--vr-primary);
+  background-color: transparent;
   cursor: pointer;
-  z-index: 200;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
 
-  .bar {
-    height: 3px;
-    width: 100%;
-    background: #111;
-    border-radius: 3px;
-    transition: 0.4s ease;
-  }
+/* --- 1. Profile Button Specifics --- */
+.vr-header__profile-btn {
+  color: var(--vr-primary); /* Default icon color */
+}
 
-  &.is-open .bar1 {
-    transform: translateY(10px) rotate(45deg);
-  }
-  &.is-open .bar2 {
-    opacity: 0;
-  }
-  &.is-open .bar3 {
-    transform: translateY(-10px) rotate(-45deg);
-  }
+.vr-header__profile-btn:hover {
+  background-color: rgba(97, 178, 124, 0.1); /* Hover BG */
+  color: var(--vr-primary); /* Icon turns green */
+  border: none;
+}
+
+/* Optional: Keep the subtle tint if logged in, but hover still overrides it */
+.vr-header__profile-btn.is-logged-in {
+  color: var(--vr-primary);
+  background-color: rgba(97, 178, 124, 0.05);
+}
+.vr-header__profile-btn.is-logged-in:hover {
+  background-color: rgba(
+    97,
+    178,
+    124,
+    0.15
+  ); /* Slightly darker on hover if logged in */
+}
+
+/* --- 2. Menu Button Specifics --- */
+.vr-header__menu-btn {
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* The Bars */
+.vr-header__menu-btn .bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background-color: var(--vr-primary);
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Hover State - Matches Profile Button */
+.vr-header__menu-btn:hover,
+.vr-header__menu-btn.is-open {
+  background-color: rgba(97, 178, 124, 0.1);
+  border: none;
+}
+
+.vr-header__menu-btn:hover .bar {
+  background-color: var(--vr-primary); /* Bars turn green */
+}
+
+/* --- Menu Open Animation --- */
+.vr-header__menu-btn.is-open .bar1 {
+  transform: rotate(45deg) translate(5px, 5px);
+  background-color: var(--vr-primary);
+}
+
+.vr-header__menu-btn.is-open .bar2 {
+  opacity: 0;
+}
+
+.vr-header__menu-btn.is-open .bar3 {
+  transform: rotate(-45deg) translate(5px, -5px);
+  background-color: var(--vr-primary);
 }

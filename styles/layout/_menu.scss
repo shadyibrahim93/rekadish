@@ -9,6 +9,10 @@ $header-height: 80px;
   /* Ensure nav has bottom padding so last item isn't cut off when scrolling */
   padding-bottom: 2rem;
 
+  .vr-category__title {
+    font-size: 1.2rem;
+  }
+
   a {
     display: flex;
     align-items: center;

@@ -44,7 +44,9 @@ export default function Breadcrumb({ recipe }) {
               {i === crumbs.length - 1 ? (
                 <span className='active'>{c.label}</span>
               ) : (
-                <Link href={c.href}>{c.label}</Link>
+                <Link href={c.href}>
+                  {c.label === 'Tips And Tricks' ? 'Tips' : c.label}
+                </Link>
               )}
             </li>
           </>

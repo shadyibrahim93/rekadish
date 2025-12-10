@@ -8,7 +8,7 @@ import RecipeCategoryMenu from './RecipeCategoryMenu';
 import RatingWidget from './RatingWidget';
 import { useModal } from '../components/ModalContext';
 
-export default function RecipeCard({ recipe }) {
+export default function RecipeCard({ recipe, hideDifficulty, hideTime }) {
   const difficulty = (recipe.difficulty || '').toLowerCase();
   const { setShowMealPlanner } = useModal();
   const [showDrawer, setShowDrawer] = useState(false); // State for the drawer
@@ -124,10 +124,14 @@ export default function RecipeCard({ recipe }) {
               disableSubmit={true}
               hideCount={true}
             />
-            <span>{recipe.total_time ? `${recipe.total_time}m` : '—'}</span>
-            <span className={`vr-recipe-card__difficulty ${difficultyClass}`}>
-              {recipe.difficulty}
-            </span>
+            {!hideTime && (
+              <span>{recipe.total_time ? `${recipe.total_time}m` : '—'}</span>
+            )}
+            {!hideDifficulty && (
+              <span className={`vr-recipe-card__difficulty ${difficultyClass}`}>
+                {recipe.difficulty}
+              </span>
+            )}
           </div>
         </div>
       </article>

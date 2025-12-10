@@ -1,13 +1,13 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Import Supabase directly
-import RecipeCard from '../components/RecipeCard';
-import AdSlot from '../components/AdSlot';
-import Breadcrumb from '../components/Breadcrumb.js';
-import { useModal } from '../components/ModalContext';
-import { BRAND_NAME, BRAND_URL, REVALIDATE_TIME } from '../lib/constants';
-import SideBar from '../components/SideBar';
+import { supabase } from '../../lib/supabaseClient'; // Import Supabase directly
+import RecipeCard from '../../components/RecipeCard';
+import AdSlot from '../../components/AdSlot';
+import Breadcrumb from '../../components/Breadcrumb.js';
+import { useModal } from '../../components/ModalContext';
+import { BRAND_NAME, BRAND_URL, REVALIDATE_TIME } from '../../lib/constants';
+import SideBar from '../../components/SideBar';
 
 // ----------------------------------------
 // 1. SERVER SIDE BUILD (ISR)

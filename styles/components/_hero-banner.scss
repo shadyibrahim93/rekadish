@@ -116,14 +116,16 @@
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 3px 7px #0000003f;
-        border-color: #fff;
+        border-color: var(--vr-accent);
+        background-color: var(--vr-accent);
       }
     }
 
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 3px 7px #0000003f;
-      border-color: #fff;
+      border-color: var(--vr-primary);
+      background-color: var(--vr-primary);
     }
   }
 }

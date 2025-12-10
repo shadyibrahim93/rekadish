@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 import SearchBox from './SearchBox';
 import Link from 'next/link';
-import { useRouter } from 'next/router'; // 1. Import useRouter
+import { useRouter } from 'next/router';
 import { useUser } from './UserContext';
 import { supabase } from '../lib/supabaseClient';
-import CreateFromIngredients from './CreateFromIngredients.js';
 import { BRAND_NAME } from '../lib/constants.js';
 import { useModal } from './ModalContext.js';
+import { IoPerson, IoPersonOutline } from 'react-icons/io5';
 
 export default function Header() {
   const [isMobile, setIsMobile] = useState(false);
@@ -23,10 +23,8 @@ export default function Header() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Helper to close menu
   const closeMenu = () => setMenuOpen(false);
 
-  // Helper to navigate via button
   const handleNav = (path) => {
     closeMenu();
     router.push(path);
@@ -61,16 +59,36 @@ export default function Header() {
             </div>
           )}
 
-          {/* RIGHT — Menu Button */}
-          <button
-            className={`vr-header__menu-btn ${menuOpen ? 'is-open' : ''}`}
-            aria-label='Menu'
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            <span className='bar bar1'></span>
-            <span className='bar bar2'></span>
-            <span className='bar bar3'></span>
-          </button>
+          {/* RIGHT — ACTIONS WRAPPER */}
+          <div className='vr-header__actions'>
+            {/* PROFILE ICON BUTTON */}
+            <button
+              className={`vr-header__profile-btn ${user ? 'is-logged-in' : ''}`}
+              onClick={() => {
+                closeMenu();
+                router.push('/profile');
+              }}
+              aria-label={user ? 'My Kitchen' : 'Sign In'}
+              title={user ? 'My Kitchen' : 'Sign In'}
+            >
+              {!loading && user ? (
+                <IoPerson size={22} />
+              ) : (
+                <IoPersonOutline size={24} />
+              )}
+            </button>
+
+            {/* HAMBURGER MENU BUTTON */}
+            <button
+              className={`vr-header__menu-btn ${menuOpen ? 'is-open' : ''}`}
+              aria-label='Menu'
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <span className='bar bar1'></span>
+              <span className='bar bar2'></span>
+              <span className='bar bar3'></span>
+            </button>
+          </div>
         </div>
 
         {/* MOBILE SEARCH BAR BELOW HEADER */}
@@ -92,6 +110,7 @@ export default function Header() {
             onClick={(e) => e.stopPropagation()}
           >
             <nav className='vr-menu__nav'>
+              <h4 className='vr-category__title'>Explore Meals</h4>
               <Link
                 href='/recipes'
                 onClick={closeMenu}
@@ -175,9 +194,33 @@ export default function Header() {
                 Meal Planner
               </Link>
 
+              <h4 className='vr-category__title'>Kitchen Guides</h4>
+              <Link
+                href='/tips-and-tricks'
+                onClick={closeMenu}
+              >
+                <img
+                  className='vr-menu__img'
+                  src='/images/menu/tips-and-tricks.webp'
+                  alt='Tips and tricks'
+                />
+                Tips And Tricks
+              </Link>
+
+              <Link
+                href='/team'
+                onClick={closeMenu}
+              >
+                <img
+                  className='vr-menu__img'
+                  src='/images/menu/team.webp'
+                  alt='RekaDish Team'
+                />
+                {BRAND_NAME} Team
+              </Link>
+
               <div className='vr-menu__auth'>
                 {!loading && !user && (
-                  /* Converted to Button using router.push */
                   <button
                     className='vr-menu__auth-btn'
                     onClick={() => handleNav('/profile')}
@@ -188,7 +231,7 @@ export default function Header() {
 
                 {!loading && user && (
                   <>
-                    {/* Converted to Button using router.push */}
+                    <h4 className='vr-category__title'>My Kitchen</h4>
                     <button
                       className='vr-menu__auth-btn'
                       onClick={() => handleNav('/profile')}

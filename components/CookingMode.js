@@ -52,7 +52,9 @@ export default function CookingMode({
 
     setHovered({
       image,
+      // Get absolute horizontal center of the word
       x: rect.left + rect.width / 2,
+      // Get absolute top of the word minus padding
       y: rect.top - 10
     });
   }
@@ -104,11 +106,14 @@ export default function CookingMode({
           <div
             className='vr-cook-preview'
             style={{
-              position: 'absolute',
+              // FIXED: Use fixed to match getBoundingClientRect coordinates
+              position: 'fixed',
               left: hovered.x,
               top: hovered.y,
-              transform: 'translate(-80%, -170%)',
-              pointerEvents: 'none'
+              // FIXED: -50% centers X, -100% moves it to sit ON TOP of the Y coordinate
+              transform: 'translate(-50%, -90%)',
+              pointerEvents: 'none',
+              zIndex: 9999 // Ensure it floats above the modal text
             }}
           >
             <Image
