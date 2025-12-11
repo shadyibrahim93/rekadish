@@ -23,7 +23,7 @@
 .vr-layout {
   display: flex;
   flex-direction: row;
-  column-gap: 1rem;
+  gap: 1rem;
 
   @media screen and (max-width: 1078px) {
     flex-direction: column;

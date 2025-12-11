@@ -1,7 +1,7 @@
 // pages/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import { useModal } from '../components/ModalContext';
@@ -65,13 +65,19 @@ export async function getStaticProps() {
     })
   );
 
-  return {
-    props: {
+  // ⚠️ CRITICAL FIX: Serialization Safety
+  // Ensure no "undefined" values are passed to props (Next.js crash prevention)
+  const safeProps = JSON.parse(
+    JSON.stringify({
       topRated: topRated || [],
       servingTimeRecipes,
       cuisines: uniqueCuisines,
       cuisineRecipes
-    },
+    })
+  );
+
+  return {
+    props: safeProps,
     revalidate: PROPS_REVALIDATE
   };
 }
@@ -84,6 +90,14 @@ export default function Home({
   cuisineRecipes = {}
 }) {
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
+
+  // ⚠️ CRITICAL FIX: Client-Side Mounting State
+  // This prevents hydration mismatches caused by AdSlots or Browser Extensions
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   /* ----------------------------------------
       SEO KEYWORDS
@@ -286,16 +300,19 @@ export default function Home({
                 {topRated.map((r, index) => (
                   <Fragment key={r.id}>
                     <RecipeCard
-                      key={r.id}
+                      // key removed here, handled by Fragment
                       recipe={r}
                     />
 
-                    <AdSlot
-                      id='101'
-                      position='in-feed'
-                      index={index}
-                      every={6}
-                    />
+                    {/* Hydration Safe Ad Rendering */}
+                    {isMounted && (
+                      <AdSlot
+                        id='101'
+                        position='in-feed'
+                        index={index}
+                        every={6}
+                      />
+                    )}
                   </Fragment>
                 ))}
               </div>
@@ -330,17 +347,17 @@ export default function Home({
                     <div className='vr-category__grid'>
                       {recipes.map((r, index) => (
                         <Fragment key={r.id}>
-                          <RecipeCard
-                            key={r.id}
-                            recipe={r}
-                          />
+                          <RecipeCard recipe={r} />
 
-                          <AdSlot
-                            id='101'
-                            position='in-feed'
-                            index={index}
-                            every={6}
-                          />
+                          {/* Hydration Safe Ad Rendering */}
+                          {isMounted && (
+                            <AdSlot
+                              id='101'
+                              position='in-feed'
+                              index={index}
+                              every={6}
+                            />
+                          )}
                         </Fragment>
                       ))}
                     </div>
@@ -378,16 +395,17 @@ export default function Home({
                     <div className='vr-category__grid'>
                       {(cuisineRecipes[cuisineName] || []).map((r, index) => (
                         <Fragment key={r.id}>
-                          <RecipeCard
-                            key={r.id}
-                            recipe={r}
-                          />
-                          <AdSlot
-                            id='101'
-                            position='in-feed'
-                            index={index}
-                            every={6}
-                          />
+                          <RecipeCard recipe={r} />
+
+                          {/* Hydration Safe Ad Rendering */}
+                          {isMounted && (
+                            <AdSlot
+                              id='101'
+                              position='in-feed'
+                              index={index}
+                              every={6}
+                            />
+                          )}
                         </Fragment>
                       ))}
                     </div>

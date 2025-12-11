@@ -15,6 +15,10 @@ export default function MyApp({ Component, pageProps }) {
           name='viewport'
           content='width=device-width,initial-scale=1'
         />
+        <meta
+          name='impact-site-verification'
+          value='dd3cee76-baa2-49a8-a042-5a747f4cee16'
+        />
       </Head>
 
       {/* --- 1. Privacy & Consent (Loads First) --- */}

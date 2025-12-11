@@ -89,7 +89,7 @@ const AdSlot = ({
   }
 
   // LOCAL DEVELOPMENT VISUALIZER
-  if (isDev) {
+  if (!isDev) {
     return (
       <div
         style={{
@@ -122,9 +122,7 @@ const AdSlot = ({
       className='ezoic-ad-slot-container'
       style={{
         // 👇 keep it in the DOM for Ezoic, but don't show until we know an ad filled
-        display: isVisible ? 'block' : 'none',
-        marginTop: isVisible ? marginTop : 0,
-        marginBottom: isVisible ? marginBottom || '1rem' : 0
+        display: isVisible ? 'block' : 'none'
       }}
     >
       <div id={`ezoic-pub-ad-placeholder-${id}`} />
