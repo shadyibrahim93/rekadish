@@ -1,3 +1,4 @@
+// pages/recipes/index.js
 import Head from 'next/head';
 import { Fragment, useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
@@ -10,11 +11,11 @@ import SideBar from '../../components/SideBar';
 const PER_PAGE = 24;
 
 // ----------------------------------------
-// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// 1. SERVER SIDE RENDER (SSR)
 // ----------------------------------------
 export async function getServerSideProps({ res }) {
   // Manual Cache Strategy:
-  // s-maxage=60: Cache in CDN for 60 seconds (keep the feed relatively fresh)
+  // s-maxage=60: Cache in CDN for 60 seconds
   // stale-while-revalidate=300: Serve stale content while updating in background
   res.setHeader(
     'Cache-Control',
@@ -22,13 +23,11 @@ export async function getServerSideProps({ res }) {
   );
 
   try {
-    // --- A. Query Logic ---
     const query = supabase
       .from('recipes')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
-    // --- B. Fetch First Page ---
     const {
       data: initialRecipes,
       count,
@@ -40,7 +39,6 @@ export async function getServerSideProps({ res }) {
       return { notFound: true };
     }
 
-    // --- C. Fetch Max Time (Safely) ---
     const { data: timeData, error: timeError } = await supabase
       .from('recipes')
       .select('total_time, cook_time')
@@ -50,18 +48,14 @@ export async function getServerSideProps({ res }) {
       console.error('SSR Time Fetch Error:', timeError);
     }
 
-    // FIX: Handle empty array to prevent -Infinity
     let initialMaxTime = 60;
-
     if (timeData && timeData.length > 0) {
       const times = timeData.map((r) => r.total_time || r.cook_time || 0);
-      // Only run Math.max if we actually have numbers
       if (times.length > 0) {
         initialMaxTime = Math.max(...times);
       }
     }
 
-    // Double safety: Ensure it's a finite number
     if (!Number.isFinite(initialMaxTime)) {
       initialMaxTime = 60;
     }
@@ -87,18 +81,14 @@ export default function Recipes({
   initialTotalCount = 0,
   initialMaxTime = 60
 }) {
-  // Hydration Safety
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Initialize state with Server Data
   const [recipes, setRecipes] = useState(initialRecipes);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
-
-  // Lazy loaded for filters
   const [allRecipes, setAllRecipes] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -116,13 +106,15 @@ export default function Recipes({
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
 
+  // ⚡️ FIX 1: Use Ref to track loading without re-rendering Observer
+  const isLoadingRef = useRef(false);
+
   // ----------------------------------------
   // 3. LAZY LOAD FILTER DATA
   // ----------------------------------------
   useEffect(() => {
     async function loadFilterData() {
       if (allRecipes.length > 0) return;
-
       const params = new URLSearchParams();
       params.set('page', 1);
       params.set('per_page', 300);
@@ -143,7 +135,6 @@ export default function Recipes({
         console.error('Failed to load filter data', err);
       }
     }
-
     const timer = setTimeout(loadFilterData, 500);
     return () => clearTimeout(timer);
   }, []);
@@ -156,27 +147,23 @@ export default function Recipes({
     params.set('page', pageNumber);
     params.set('per_page', PER_PAGE);
 
-    if (filters.ingredients.length > 0) {
+    if (filters.ingredients.length > 0)
       params.set('ingredients', filters.ingredients.join(','));
-    }
-
-    if (filters.difficulty) {
-      params.set('difficulty', filters.difficulty);
-    }
-
-    // Only send max_time if the user actually narrowed it
-    if (filters.maxTime && filters.maxTime < initialMaxTime) {
+    if (filters.difficulty) params.set('difficulty', filters.difficulty);
+    if (filters.maxTime && filters.maxTime < initialMaxTime)
       params.set('max_time', filters.maxTime);
-    }
 
     return params.toString();
   };
 
   // ----------------------------------------
-  // 5. FETCH RECIPES PAGE (Client Logic)
+  // 5. FETCH RECIPES PAGE
   // ----------------------------------------
   const fetchRecipesPage = async (pageNumber, replace = false) => {
+    // ⚡️ FIX 2: Update Ref immediately
+    isLoadingRef.current = true;
     setIsLoading(true);
+
     const qs = buildQueryString(pageNumber);
 
     try {
@@ -210,6 +197,8 @@ export default function Recipes({
       console.error('Failed to fetch recipes', err);
     } finally {
       setIsLoading(false);
+      // ⚡️ FIX 3: Reset Ref when done
+      isLoadingRef.current = false;
     }
   };
 
@@ -222,35 +211,40 @@ export default function Recipes({
       isFirstRun.current = false;
       return;
     }
-
     setPage(1);
     setHasMore(true);
-
     fetchRecipesPage(1, true);
   }, [filters]);
 
   // ----------------------------------------
-  // 7. INFINITE SCROLL
+  // 7. SEAMLESS INFINITE SCROLL
   // ----------------------------------------
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore) return;
     if (!sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting) {
-          observer.unobserve(entry.target);
+
+        // ⚡️ FIX 4: Check Ref instead of State
+        // This ensures the Observer doesn't need to be recreated on loading change
+        if (entry.isIntersecting && !isLoadingRef.current) {
           fetchRecipesPage(page + 1);
         }
       },
-      { rootMargin: '1200px', threshold: 0.1 }
+      {
+        rootMargin: '1200px', // Pre-load 2 screens ahead
+        threshold: 0.1
+      }
     );
 
     observer.observe(sentinelRef.current);
-
     return () => observer.disconnect();
-  }, [hasMore, isLoading, page, filters]);
+
+    // ⚡️ FIX 5: REMOVE 'isLoading' from dependencies
+    // This stops the observer from dying/restarting constantly
+  }, [hasMore, page, filters]);
 
   return (
     <>
@@ -262,17 +256,14 @@ export default function Recipes({
         />
       </Head>
 
-      {/* MAIN LAYOUT */}
       <div className='vr-category-layout'>
-        {/* LEFT FILTER SIDEBAR */}
         <FilterPanel
-          allRecipes={allRecipes} // Populates lazily
+          allRecipes={allRecipes}
           difficultyOptions={['easy', 'medium', 'hard']}
           initialTimeRange={{ min: 0, max: 60 }}
           onFilterChange={setFilters}
         />
 
-        {/* MAIN GRID */}
         <main
           className='vr-category-main'
           id='trending'
@@ -280,7 +271,6 @@ export default function Recipes({
         >
           <div className='vr-category__header'>
             <h3 className='vr-category__title'>All Recipes</h3>
-
             <span className='vr-category-main__meta'>{totalCount} Recipes</span>
           </div>
 
@@ -300,10 +290,13 @@ export default function Recipes({
             ))}
           </div>
 
+          {/* Sentinel */}
           {hasMore && (
             <div
               ref={sentinelRef}
               className='vr-infinite-sentinel'
+              // Ensure sentinel has dimensions so it catches the observer correctly on mobile
+              style={{ height: '20px', width: '100%' }}
             >
               {isLoading && <span>Loading more recipes…</span>}
             </div>
@@ -322,7 +315,6 @@ export default function Recipes({
           )}
         </main>
 
-        {/* RIGHT SIDEBAR */}
         <SideBar />
       </div>
     </>

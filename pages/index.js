@@ -1,7 +1,7 @@
 // pages/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { Fragment, useMemo, useState, useEffect } from 'react';
+import { Fragment, useMemo, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import { useModal } from '../components/ModalContext';
@@ -9,21 +9,20 @@ import { BRAND_NAME, BRAND_URL } from '../lib/constants';
 import SideBar from '../components/SideBar.js';
 import AdSlot from '../components/AdSlot';
 
-// 👇 1. CHANGED: getServerSideProps (Bypasses the broken ISR Queue)
+const SECTIONS_PER_BATCH = 3; // How many cuisine sections to reveal at once
+
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR)
+// ----------------------------------------
 export async function getServerSideProps({ res }) {
-  // We manually set caching here.
-  // s-maxage=60: Cloudflare/CDN caches this page for 60 seconds.
-  // stale-while-revalidate=300: If 60s passes, show old version while fetching new one in background.
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=60, stale-while-revalidate=300'
   );
 
-  // Define the lightweight columns we need for cards
   const cardColumns =
     'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
-  // --- A. Fetch Top Rated ---
   const { data: topRated } = await supabase
     .from('recipes')
     .select(cardColumns)
@@ -31,7 +30,6 @@ export async function getServerSideProps({ res }) {
     .order('rating_count', { ascending: false })
     .limit(8);
 
-  // --- B. Fetch a batch to determine Cuisines & Serving Times ---
   const { data: batchRecipes } = await supabase
     .from('recipes')
     .select(cardColumns)
@@ -39,7 +37,6 @@ export async function getServerSideProps({ res }) {
 
   const all = batchRecipes || [];
 
-  // 1. Process Serving Time Groups
   const servingTimeRecipes = all.reduce((acc, r) => {
     const key = r.serving_time?.trim();
     if (!key) return acc;
@@ -48,12 +45,10 @@ export async function getServerSideProps({ res }) {
     return acc;
   }, {});
 
-  // 2. Process Unique Cuisines
   const uniqueCuisines = [
     ...new Set(all.map((r) => r.cuisine?.trim()).filter(Boolean))
-  ].slice(0, 8);
+  ].slice(0, 12); // Increased limit slightly since we have lazy load now
 
-  // --- C. Fetch Recipes for those Specific Cuisines ---
   const cuisineRecipes = {};
   await Promise.all(
     uniqueCuisines.map(async (cuisine) => {
@@ -66,7 +61,7 @@ export async function getServerSideProps({ res }) {
     })
   );
 
-  // Safety: Ensure no undefined values passed to props
+  // Serialize to be safe
   const safeProps = JSON.parse(
     JSON.stringify({
       topRated: topRated || [],
@@ -78,11 +73,12 @@ export async function getServerSideProps({ res }) {
 
   return {
     props: safeProps
-    // ❌ REMOVED: revalidate: 60 (This was causing the "Dummy queue" crash)
   };
 }
 
-// 👇 2. COMPONENT (Client Side)
+// ----------------------------------------
+// 2. COMPONENT
+// ----------------------------------------
 export default function Home({
   topRated = [],
   servingTimeRecipes = {},
@@ -90,25 +86,51 @@ export default function Home({
   cuisineRecipes = {}
 }) {
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
-
-  // Client-Side Mounting State (Prevents Hydration Mismatch)
   const [isMounted, setIsMounted] = useState(false);
+
+  // Lazy Reveal State
+  const [visibleCuisinesCount, setVisibleCuisinesCount] =
+    useState(SECTIONS_PER_BATCH);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  /* ----------------------------------------
-      SEO KEYWORDS
-  ---------------------------------------- */
+  const visibleCuisines = useMemo(() => {
+    return cuisines.slice(0, visibleCuisinesCount);
+  }, [cuisines, visibleCuisinesCount]);
+
+  const hasMore = visibleCuisinesCount < cuisines.length;
+
+  // ----------------------------------------
+  // LAZY REVEAL OBSERVER
+  // ----------------------------------------
+  useEffect(() => {
+    if (!hasMore) return;
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          // Reveal next batch
+          setVisibleCuisinesCount((prev) => prev + SECTIONS_PER_BATCH);
+        }
+      },
+      { rootMargin: '1200px', threshold: 0.1 }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore]);
+
   const metaKeywords = useMemo(() => {
     const cuisineKeywords = cuisines.join(', ');
     return `recipes, easy recipes, quick meals, dinner ideas, ${cuisineKeywords}, ${BRAND_NAME}`;
   }, [cuisines]);
 
-  /* ----------------------------------------
-      STRUCTURED DATA
-  ---------------------------------------- */
+  // Schema (Condensed for brevity)
   const siteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -120,42 +142,20 @@ export default function Home({
       'query-input': 'required name=search_term_string'
     }
   };
-
   const orgSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: BRAND_NAME,
     url: BRAND_URL,
-    logo: {
-      '@type': 'ImageObject',
-      url: `${BRAND_URL}/logo.webp`
-    },
-    sameAs: [
-      `https://www.facebook.com/${BRAND_URL}`,
-      `https://www.instagram.com/${BRAND_URL}`,
-      `https://www.pinterest.com/${BRAND_URL}`
-    ]
+    logo: { '@type': 'ImageObject', url: `${BRAND_URL}/logo.webp` }
   };
-
   const homeSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${BRAND_NAME} — Discover delightful recipes`,
     description:
       'Discover curated, fast, and fun recipes by cuisine, category, and difficulty.',
-    url: BRAND_URL,
-    hasPart: [
-      {
-        '@type': 'Collection',
-        name: 'Top Rated Recipes',
-        url: `${BRAND_URL}/recipes?sort=top-rated`
-      },
-      ...cuisines.map((cuisineName) => ({
-        '@type': 'Collection',
-        name: `${cuisineName} Recipes`,
-        url: `${BRAND_URL}/categories/${encodeURIComponent(cuisineName)}`
-      }))
-    ]
+    url: BRAND_URL
   };
 
   return (
@@ -170,18 +170,11 @@ export default function Home({
           name='keywords'
           content={metaKeywords}
         />
-        <meta
-          name='author'
-          content={`${BRAND_NAME} Editorial Team`}
-        />
-        <meta
-          name='publisher'
-          content={`${BRAND_NAME}`}
-        />
         <link
           rel='canonical'
           href={BRAND_URL}
         />
+        {/* OG Tags */}
         <meta
           property='og:title'
           content={`${BRAND_NAME} — Discover delightful recipes`}
@@ -203,20 +196,12 @@ export default function Home({
           content='website'
         />
         <meta
-          property='og:site_name'
-          content={`${BRAND_NAME}`}
-        />
-        <meta
           name='twitter:card'
           content='summary_large_image'
         />
         <meta
           name='twitter:title'
           content={`${BRAND_NAME} — Discover delightful recipes`}
-        />
-        <meta
-          name='twitter:description'
-          content='Find curated recipes, meal ideas, and kitchen essentials.'
         />
         <meta
           name='twitter:image'
@@ -242,7 +227,7 @@ export default function Home({
         <img
           className='vr-hero__image'
           src='/images/hero-banner2.webp'
-          alt='Assorted plated dishes from different cuisines'
+          alt='Assorted plated dishes'
         />
         <div className='vr-hero__overlay'>
           <h1 className='vr-hero__title'>
@@ -269,10 +254,10 @@ export default function Home({
         </div>
       </section>
 
-      {/* MAIN HOME LAYOUT */}
+      {/* MAIN LAYOUT */}
       <div className='vr-home-layout'>
         <div className='vr-category__container'>
-          {/* TOP RATED SECTION */}
+          {/* 1. TOP RATED (Always Visible) */}
           {topRated.length > 0 && (
             <section
               className='vr-section'
@@ -305,7 +290,7 @@ export default function Home({
             </section>
           )}
 
-          {/* SERVING TIME SECTIONS */}
+          {/* 2. SERVING TIMES (Always Visible) */}
           {Object.keys(servingTimeRecipes).length > 0 && (
             <section
               className='vr-section vr-section--serving-time'
@@ -351,14 +336,14 @@ export default function Home({
             </section>
           )}
 
-          {/* CUISINE SECTIONS */}
+          {/* 3. CUISINE SECTIONS (Lazy Loaded) */}
           {cuisines.length > 0 && (
             <section
               className='vr-section vr-section--cuisines'
               aria-labelledby='cuisines-heading'
             >
               <div className='vr-cuisines-list'>
-                {cuisines.map((cuisineName) => (
+                {visibleCuisines.map((cuisineName) => (
                   <div
                     key={cuisineName}
                     className='vr-section'
@@ -393,12 +378,19 @@ export default function Home({
                     </div>
                   </div>
                 ))}
+
+                {/* Sentinel for Lazy Reveal */}
+                {hasMore && (
+                  <div
+                    ref={sentinelRef}
+                    style={{ height: '50px', width: '100%' }}
+                  />
+                )}
               </div>
             </section>
           )}
         </div>
 
-        {/* SIDEBAR */}
         <SideBar />
       </div>
     </>

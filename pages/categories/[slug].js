@@ -172,6 +172,8 @@ export default function CategoryPage({
 
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
+
+  // Ref to track loading status inside Observer (Prevents Churn)
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef(null);
 
@@ -447,10 +449,12 @@ export default function CategoryPage({
             ))}
           </div>
 
+          {/* Sentinel Div - with explicit height to fix mobile scrolling */}
           {hasMore && (
             <div
               ref={sentinelRef}
               className='vr-infinite-sentinel'
+              style={{ height: '20px', width: '100%' }}
             >
               {isLoading && <span>Loading more recipes…</span>}
             </div>

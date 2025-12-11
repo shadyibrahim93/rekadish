@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import React, { Fragment, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
@@ -129,7 +130,7 @@ export default function ServingTimePage({
 
   const [recipes, setRecipes] = useState(initialRecipes);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
-  const [allRecipes] = useState(initialAllRecipes);
+  const [allRecipes, setAllRecipes] = useState(initialAllRecipes);
 
   const [filters, setFilters] = useState({
     ingredients: [],
@@ -145,6 +146,8 @@ export default function ServingTimePage({
 
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
+
+  // Ref to track loading status inside Observer (Prevents Churn)
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef(null);
 
@@ -257,11 +260,15 @@ export default function ServingTimePage({
         const entry = entries[0];
         if (!entry.isIntersecting) return;
 
+        // Check Ref instead of State to prevent closure staleness
         if (isLoadingRef.current) return;
 
         fetchRecipesPage(page + 1);
       },
-      { rootMargin: '1200px', threshold: 0.1 }
+      {
+        rootMargin: '1200px', // Pre-load 2 screens ahead
+        threshold: 0.1
+      }
     );
 
     obs.observe(sentinelRef.current);
@@ -348,10 +355,12 @@ export default function ServingTimePage({
             ))}
           </div>
 
+          {/* Sentinel Div - with explicit height to fix mobile scrolling */}
           {hasMore && (
             <div
               ref={sentinelRef}
               className='vr-infinite-sentinel'
+              style={{ height: '20px', width: '100%' }}
             >
               {isLoading && <span>Loading more recipes…</span>}
             </div>

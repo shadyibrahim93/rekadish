@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { Fragment, useEffect, useState } from 'react'; // Added useState
+import { Fragment, useEffect, useState } from 'react';
 import { IoShareOutline } from 'react-icons/io5';
 import { supabase } from '../../lib/supabaseClient';
 import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
@@ -23,6 +23,8 @@ const PostComments = dynamic(
   }
 );
 
+// ❌ REMOVED: getStaticPaths (Not allowed with getServerSideProps)
+
 // ----------------------------------------
 // 1. SERVER SIDE RENDER (SSR) - Replaces ISR
 // ----------------------------------------
@@ -30,14 +32,13 @@ export async function getServerSideProps({ params, res }) {
   const { slug } = params;
 
   // Manual Cache Strategy:
-  // s-maxage=120: Cache in CDN for 2 minutes (since view counts update often)
+  // s-maxage=120: Cache in CDN for 2 minutes
   // stale-while-revalidate=86400: Serve stale content for up to 1 day while updating
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=120, stale-while-revalidate=86400'
   );
 
-  // OPTIMIZATION: Split columns.
   const baseColumns = [
     'id',
     'title',
@@ -69,10 +70,19 @@ export async function getServerSideProps({ params, res }) {
     return { notFound: true };
   }
 
+  // Pre-format Date on Server to prevent Hydration Mismatch
+  const formattedDate = post.created_at
+    ? new Date(post.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : null;
+
   // OPTIMIZATION: Prepare all auxiliary promises to run in PARALLEL
   const promises = [];
 
-  // 2. Fetch Latest (Promise 0)
+  // 2. Fetch Latest
   promises.push(
     supabase
       .from('blogs')
@@ -81,7 +91,7 @@ export async function getServerSideProps({ params, res }) {
       .limit(12)
   );
 
-  // 3. Fetch Related by Tag (Promise 1)
+  // 3. Fetch Related by Tag
   if (post.tags && post.tags.length > 0) {
     const primaryTag = post.tags[0];
     promises.push(
@@ -97,7 +107,7 @@ export async function getServerSideProps({ params, res }) {
     promises.push(Promise.resolve({ data: [] }));
   }
 
-  // 4. Fetch Author Posts (Promise 2)
+  // 4. Fetch Author Posts
   if (post.author_name) {
     promises.push(
       supabase
@@ -112,7 +122,7 @@ export async function getServerSideProps({ params, res }) {
     promises.push(Promise.resolve({ data: [] }));
   }
 
-  // 5. Fetch Related Recipes (Promise 3)
+  // 5. Fetch Related Recipes
   const rawIds = post.related_recipe_ids;
   let recipeIds = [];
 
@@ -184,7 +194,8 @@ export async function getServerSideProps({ params, res }) {
       topTags,
       related,
       authorPosts,
-      relatedRecipes
+      relatedRecipes,
+      formattedDate // Pass server-formatted date
     }
   };
 }
@@ -196,7 +207,8 @@ export default function TipsAndTricksPost({
   topTags = [],
   related = [],
   authorPosts = [],
-  relatedRecipes = []
+  relatedRecipes = [],
+  formattedDate // Recieve server date
 }) {
   const { user } = useUser();
   const TRACK_VIEWS_ON_LOCAL = false;
@@ -222,6 +234,7 @@ export default function TipsAndTricksPost({
       if (isLocalhost && !TRACK_VIEWS_ON_LOCAL) return;
 
       try {
+        // Fire and forget
         supabase
           .from('blogs')
           .update({ view_count: (post.view_count || 0) + 1 })
@@ -257,16 +270,6 @@ export default function TipsAndTricksPost({
       console.error('Share failed', err);
     }
   };
-
-  const createdDate = post.created_at ? new Date(post.created_at) : null;
-
-  const formattedDate = createdDate
-    ? createdDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    : null;
 
   const readingTimeMinutes = (() => {
     if (!post.content) return null;
@@ -441,6 +444,7 @@ export default function TipsAndTricksPost({
                         )}
                       </div>
                       <div className='vr-tips-post__meta-line'>
+                        {/* Use server-formatted date to prevent hydration error */}
                         {formattedDate && <span>{formattedDate}</span>}
                         {readingTimeMinutes && (
                           <>
