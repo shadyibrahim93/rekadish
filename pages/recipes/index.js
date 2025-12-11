@@ -9,14 +9,9 @@ import { BRAND_NAME } from '../../lib/constants';
 import SideBar from '../../components/SideBar';
 
 const PER_PAGE = 24;
+const AUTO_LOAD_LIMIT = 3; // 🛑 Safety Brake: Auto-load 3 pages, then pause.
 
-// ----------------------------------------
-// 1. SERVER SIDE RENDER (SSR)
-// ----------------------------------------
 export async function getServerSideProps({ res }) {
-  // Manual Cache Strategy:
-  // s-maxage=60: Cache in CDN for 60 seconds
-  // stale-while-revalidate=300: Serve stale content while updating in background
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=60, stale-while-revalidate=300'
@@ -39,14 +34,10 @@ export async function getServerSideProps({ res }) {
       return { notFound: true };
     }
 
-    const { data: timeData, error: timeError } = await supabase
+    const { data: timeData } = await supabase
       .from('recipes')
       .select('total_time, cook_time')
       .limit(100);
-
-    if (timeError) {
-      console.error('SSR Time Fetch Error:', timeError);
-    }
 
     let initialMaxTime = 60;
     if (timeData && timeData.length > 0) {
@@ -73,9 +64,6 @@ export async function getServerSideProps({ res }) {
   }
 }
 
-// ----------------------------------------
-// 2. CLIENT SIDE COMPONENT
-// ----------------------------------------
 export default function Recipes({
   initialRecipes = [],
   initialTotalCount = 0,
@@ -103,15 +91,14 @@ export default function Recipes({
   );
   const [page, setPage] = useState(1);
 
+  // 🛑 NEW: Track how many times we've auto-loaded
+  const [autoLoadCount, setAutoLoadCount] = useState(0);
+
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
-
-  // ⚡️ FIX 1: Use Ref to track loading without re-rendering Observer
   const isLoadingRef = useRef(false);
 
-  // ----------------------------------------
   // 3. LAZY LOAD FILTER DATA
-  // ----------------------------------------
   useEffect(() => {
     async function loadFilterData() {
       if (allRecipes.length > 0) return;
@@ -139,9 +126,7 @@ export default function Recipes({
     return () => clearTimeout(timer);
   }, []);
 
-  // ----------------------------------------
   // 4. HELPER: BUILD QUERY STRING
-  // ----------------------------------------
   const buildQueryString = (pageNumber) => {
     const params = new URLSearchParams();
     params.set('page', pageNumber);
@@ -156,11 +141,8 @@ export default function Recipes({
     return params.toString();
   };
 
-  // ----------------------------------------
   // 5. FETCH RECIPES PAGE
-  // ----------------------------------------
   const fetchRecipesPage = async (pageNumber, replace = false) => {
-    // ⚡️ FIX 2: Update Ref immediately
     isLoadingRef.current = true;
     setIsLoading(true);
 
@@ -197,14 +179,11 @@ export default function Recipes({
       console.error('Failed to fetch recipes', err);
     } finally {
       setIsLoading(false);
-      // ⚡️ FIX 3: Reset Ref when done
       isLoadingRef.current = false;
     }
   };
 
-  // ----------------------------------------
   // 6. RESET + LOAD ON FILTER CHANGE
-  // ----------------------------------------
   const isFirstRun = useRef(true);
   useEffect(() => {
     if (isFirstRun.current) {
@@ -213,38 +192,42 @@ export default function Recipes({
     }
     setPage(1);
     setHasMore(true);
+    setAutoLoadCount(0); // Reset brake on filter change
     fetchRecipesPage(1, true);
   }, [filters]);
 
-  // ----------------------------------------
-  // 7. SEAMLESS INFINITE SCROLL
-  // ----------------------------------------
+  // 7. SEAMLESS INFINITE SCROLL (With Safety Brake)
   useEffect(() => {
     if (!hasMore) return;
+    // 🛑 If we hit the limit, stop observing. User must click button.
+    if (autoLoadCount >= AUTO_LOAD_LIMIT) return;
+
     if (!sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-
-        // ⚡️ FIX 4: Check Ref instead of State
-        // This ensures the Observer doesn't need to be recreated on loading change
         if (entry.isIntersecting && !isLoadingRef.current) {
           fetchRecipesPage(page + 1);
+          // Increment the brake counter
+          setAutoLoadCount((prev) => prev + 1);
         }
       },
       {
-        rootMargin: '1200px', // Pre-load 2 screens ahead
+        rootMargin: '1200px',
         threshold: 0.1
       }
     );
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
+  }, [hasMore, page, filters, autoLoadCount]); // Add autoLoadCount dependency
 
-    // ⚡️ FIX 5: REMOVE 'isLoading' from dependencies
-    // This stops the observer from dying/restarting constantly
-  }, [hasMore, page, filters]);
+  // 8. Manual Load Handler (Releases the brake)
+  const handleLoadMore = () => {
+    setAutoLoadCount(0); // Reset the counter to allow 3 more auto-loads
+    fetchRecipesPage(page + 1);
+  };
 
   return (
     <>
@@ -290,15 +273,37 @@ export default function Recipes({
             ))}
           </div>
 
-          {/* Sentinel */}
+          {/* INFINITE SCROLL SENTINEL & BUTTON */}
           {hasMore && (
-            <div
-              ref={sentinelRef}
-              className='vr-infinite-sentinel'
-              // Ensure sentinel has dimensions so it catches the observer correctly on mobile
-              style={{ height: '20px', width: '100%' }}
-            >
-              {isLoading && <span>Loading more recipes…</span>}
+            <div className='vr-infinite-footer'>
+              {/* Option A: Spinner (Visible when auto-loading) */}
+              {isLoading && (
+                <div
+                  className='vr-infinite-sentinel'
+                  style={{ height: '50px' }}
+                >
+                  <span>Loading more recipes…</span>
+                </div>
+              )}
+
+              {/* Option B: Invisible Sentinel (Active when not loading & under limit) */}
+              {!isLoading && autoLoadCount < AUTO_LOAD_LIMIT && (
+                <div
+                  ref={sentinelRef}
+                  style={{ height: '20px', width: '100%' }} // Physical bump for mobile
+                />
+              )}
+
+              {/* Option C: "Load More" Button (Active when limit hit) */}
+              {!isLoading && autoLoadCount >= AUTO_LOAD_LIMIT && (
+                <button
+                  className='vr-hero__badge--light'
+                  onClick={handleLoadMore}
+                  style={{ margin: '2rem auto', display: 'block' }}
+                >
+                  Load More Recipes
+                </button>
+              )}
             </div>
           )}
 
