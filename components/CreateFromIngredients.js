@@ -1,18 +1,88 @@
 // components/CreateFromIngredients.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import RecipeCard from './RecipeCard';
 import AdSlot from './AdSlot';
-import { useModal } from './ModalContext'; // 1. Import the hook
+import { useModal } from './ModalContext';
 
 export default function CreateFromIngredients() {
   const [ingredientInput, setIngredientInput] = useState('');
   const [selectedIngredients, setSelectedIngredients] = useState([]);
-  const [recipes, setRecipes] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  // 2. Get the close function from context
+  // 🆕 STATE: Store the full recipe pool locally for accurate filtering
+  const [allRecipes, setAllRecipes] = useState([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
   const { setShowIngredientsModal } = useModal();
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // ----------------------------------------------------
+  // 1. HELPER: PARSE INGREDIENTS (Copied from FilterPanel)
+  // ----------------------------------------------------
+  const getRecipeIngredients = (rec) => {
+    let ings = rec.ingredients;
+    if (typeof ings === 'string') {
+      try {
+        ings = JSON.parse(ings);
+      } catch {
+        ings = [];
+      }
+    }
+    return Array.isArray(ings) ? ings : [];
+  };
+
+  // ----------------------------------------------------
+  // 2. FETCH DATA ONCE (Lazy Load Pattern)
+  // ----------------------------------------------------
+  useEffect(() => {
+    async function loadRecipePool() {
+      try {
+        // Fetch a large batch to ensure we have a good pool for filtering.
+        // This ensures filtering happens on the parsed JSON (accurate),
+        // rather than a fuzzy DB text search (inaccurate).
+        const res = await fetch('/api/recipes?page=1&per_page=1000');
+        const json = await res.json();
+
+        setAllRecipes(json.data || []);
+        setIsDataLoaded(true);
+      } catch (err) {
+        console.error('Failed to load recipe database', err);
+        setIsDataLoaded(true);
+      }
+    }
+
+    loadRecipePool();
+  }, []);
+
+  // ----------------------------------------------------
+  // 3. FILTER LOGIC (Matches FilterPanel exactly)
+  // ----------------------------------------------------
+  const matchedRecipes = useMemo(() => {
+    if (!selectedIngredients.length || !allRecipes.length) {
+      return [];
+    }
+
+    return allRecipes.filter((rec) => {
+      // Get valid slugs from the recipe's ingredient list
+      const recImageSlugs = getRecipeIngredients(rec)
+        .map((i) => i.image)
+        .filter(Boolean);
+
+      // Strict Check: Recipe must contain ALL selected ingredients
+      const hasAllSelected = selectedIngredients.every((slug) =>
+        recImageSlugs.includes(slug)
+      );
+
+      return hasAllSelected;
+    });
+  }, [allRecipes, selectedIngredients]);
+
+  // Input Handlers
   function slugify(str) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   }
@@ -35,34 +105,13 @@ export default function CreateFromIngredients() {
     setSelectedIngredients(selectedIngredients.filter((i) => i !== slug));
   }
 
-  useEffect(() => {
-    if (!selectedIngredients.length) {
-      setRecipes([]);
-      return;
-    }
-
-    async function fetchRecipes() {
-      setLoading(true);
-      const list = selectedIngredients.join(',');
-
-      const res = await fetch(
-        `/api/recipes?ingredients=${list}&match_type=all`
-      );
-      const json = await res.json();
-
-      setRecipes(json.data || []);
-      setLoading(false);
-    }
-
-    fetchRecipes();
-  }, [selectedIngredients]);
-
   return (
     <section className='vr-create-ing'>
       <h2 className='vr-category__title'>Create Recipes From Ingredients</h2>
       <p className='vr-modal-subtitle'>
         Add the ingredients you have, and we’ll show you matching recipes.
       </p>
+
       <div
         className={`${
           selectedIngredients.length > 0 ? 'vr-filter-container' : ''
@@ -74,12 +123,13 @@ export default function CreateFromIngredients() {
         >
           <input
             type='text'
-            placeholder='Add ingredients…'
+            placeholder='Add ingredients (e.g. salt, chicken)...'
             value={ingredientInput}
             onChange={(e) => setIngredientInput(e.target.value)}
           />
           <button type='submit'>Add</button>
         </form>
+
         {selectedIngredients.length > 0 && (
           <div className='vr-create-ing__tags'>
             {selectedIngredients.map((tag) => (
@@ -104,25 +154,39 @@ export default function CreateFromIngredients() {
         )}
       </div>
 
-      {loading && <p>Loading recipes…</p>}
+      {/* FEEDBACK STATES */}
+      {!isDataLoaded && (
+        <p className='vr-search-results__empty'>Loading recipe database...</p>
+      )}
 
-      {!loading && recipes.length > 0 && (
+      {isDataLoaded &&
+        selectedIngredients.length > 0 &&
+        matchedRecipes.length === 0 && (
+          <p className='vr-search-results__empty'>
+            No recipes found containing all of these ingredients. Try removing
+            one.
+          </p>
+        )}
+
+      {/* RESULTS GRID */}
+      {matchedRecipes.length > 0 && (
         <div className='vr-category__grid'>
-          {recipes.map((r, index) => (
-            /* 3. Wrap Card in a generic container that handles the click. 
-               display: 'contents' preserves your grid layout. */
+          {matchedRecipes.map((r, index) => (
             <div
               key={r.id}
               onClick={() => setShowIngredientsModal(false)}
+              style={{ display: 'contents', cursor: 'pointer' }}
             >
               <RecipeCard recipe={r} />
 
-              <AdSlot
-                id='101'
-                position='in-feed'
-                index={index}
-                every={5}
-              />
+              {isMounted && (
+                <AdSlot
+                  id='101'
+                  position='in-feed'
+                  index={index}
+                  every={5}
+                />
+              )}
             </div>
           ))}
         </div>

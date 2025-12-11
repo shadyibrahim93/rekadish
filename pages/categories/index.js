@@ -1,24 +1,33 @@
+// pages/categories/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { supabase } from '../../lib/supabaseClient'; // Import Supabase directly
+import { useMemo, useState, useEffect, useRef, Fragment } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import RecipeCard from '../../components/RecipeCard';
 import AdSlot from '../../components/AdSlot';
 import Breadcrumb from '../../components/Breadcrumb.js';
 import { useModal } from '../../components/ModalContext';
-import { BRAND_NAME, BRAND_URL, REVALIDATE_TIME } from '../../lib/constants';
+import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 import SideBar from '../../components/SideBar';
 
+const CATEGORIES_PER_BATCH = 4; // Render 4 cuisine sections at a time
+
 // ----------------------------------------
-// 1. SERVER SIDE BUILD (ISR)
+// 1. SERVER SIDE RENDER (SSR)
 // ----------------------------------------
-export async function getStaticProps() {
-  // 👇 THE SAFE COLUMN LIST (Prevents crash, saves bandwidth)
+export async function getServerSideProps({ res }) {
+  // Manual Cache Strategy:
+  // s-maxage=3600: Cache in CDN for 1 hour
+  // stale-while-revalidate=86400: Serve stale content while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=3600, stale-while-revalidate=86400'
+  );
+
   const safeColumns =
     'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   // A. Fetch a large batch to find all unique cuisines
-  // We limit to 500 to get a good representation of active categories
   const { data: allData } = await supabase
     .from('recipes')
     .select('cuisine')
@@ -30,16 +39,16 @@ export async function getStaticProps() {
     ...new Set((allData || []).map((r) => r.cuisine?.trim()).filter(Boolean))
   ].sort();
 
-  // C. Fetch Recipes for EACH Cuisine (in parallel)
+  // C. Fetch Recipes for EACH Cuisine
   const cuisineRecipes = {};
 
   await Promise.all(
     uniqueCuisines.map(async (cuisine) => {
       const { data } = await supabase
         .from('recipes')
-        .select(safeColumns) // 👈 Optimization happens here
+        .select(safeColumns)
         .eq('cuisine', cuisine)
-        .limit(8); // Limit 8 per row for cleaner layout (or 12)
+        .limit(8);
 
       if (data && data.length > 0) {
         cuisineRecipes[cuisine] = data;
@@ -47,7 +56,6 @@ export async function getStaticProps() {
     })
   );
 
-  // Filter out cuisines that ended up having 0 recipes
   const activeCuisines = uniqueCuisines.filter(
     (c) => cuisineRecipes[c] && cuisineRecipes[c].length > 0
   );
@@ -56,19 +64,62 @@ export async function getStaticProps() {
     props: {
       cuisines: activeCuisines,
       cuisineRecipes
-    },
-    revalidate: REVALIDATE_TIME // Update every 60s
+    }
   };
 }
 
 // ----------------------------------------
-// 2. COMPONENT (Instant Render)
+// 2. COMPONENT
 // ----------------------------------------
 export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
 
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Infinite Scroll State
+  const [visibleCount, setVisibleCount] = useState(CATEGORIES_PER_BATCH);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Determine which cuisines to actually render based on scroll position
+  const visibleCuisines = useMemo(() => {
+    return cuisines.slice(0, visibleCount);
+  }, [cuisines, visibleCount]);
+
+  const hasMore = visibleCount < cuisines.length;
+
+  // ----------------------------------------
+  // INFINITE SCROLL OBSERVER
+  // ----------------------------------------
+  useEffect(() => {
+    if (!hasMore) return;
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          // Reveal the next batch of categories
+          setVisibleCount((prev) => prev + CATEGORIES_PER_BATCH);
+        }
+      },
+      {
+        // 👇 Load next batch when user is 1200px (approx 1-2 screens) away
+        rootMargin: '1200px',
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore]);
+
   /* ----------------------------------------
-      SEO: keywords
+      SEO
   ---------------------------------------- */
   const metaKeywords = useMemo(() => {
     const cuisineKeywords = cuisines.join(', ');
@@ -76,9 +127,8 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
   }, [cuisines]);
 
   /* ----------------------------------------
-      JSON-LD SCHEMA
+      SCHEMA
   ---------------------------------------- */
-  // ⭐ Site Schema
   const siteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -99,7 +149,6 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
     }
   };
 
-  // ⭐ Collection Schema
   const collectionSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -138,7 +187,6 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
           href={`${BRAND_URL}/categories`}
         />
 
-        {/* OPEN GRAPH */}
         <meta
           property='og:title'
           content={`${BRAND_NAME} — Discover delightful recipes`}
@@ -164,7 +212,6 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
           content={BRAND_NAME}
         />
 
-        {/* TWITTER */}
         <meta
           name='twitter:card'
           content='summary_large_image'
@@ -182,14 +229,15 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
           content={`${BRAND_URL}/images/cuisine.webp`}
         />
 
-        {/* STRUCTURED DATA */}
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
         />
         <script
           type='application/ld+json'
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(collectionSchema)
+          }}
         />
       </Head>
 
@@ -236,7 +284,8 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
       {/* MAIN LAYOUT */}
       <div className='vr-home-layout'>
         <div className='vr-category__container'>
-          {cuisines.map((cuisineName) => (
+          {/* Render only the "visible" cuisines */}
+          {visibleCuisines.map((cuisineName) => (
             <section
               key={cuisineName}
               className='vr-section'
@@ -259,23 +308,30 @@ export default function Categories({ cuisines = [], cuisineRecipes = {} }) {
 
               <div className='vr-category__grid'>
                 {(cuisineRecipes[cuisineName] || []).map((r, index) => (
-                  <>
-                    <RecipeCard
-                      key={r.id}
-                      recipe={r}
-                    />
-
-                    <AdSlot
-                      id='101'
-                      position='in-feed'
-                      index={index}
-                      every={6}
-                    />
-                  </>
+                  <Fragment key={r.id}>
+                    <RecipeCard recipe={r} />
+                    {isMounted && (
+                      <AdSlot
+                        id='101'
+                        position='in-feed'
+                        index={index}
+                        every={6}
+                      />
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </section>
           ))}
+
+          {/* Sentinel Div for Infinite Scroll */}
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className='vr-infinite-sentinel'
+              style={{ height: '50px', opacity: 0 }}
+            />
+          )}
         </div>
 
         {/* RIGHT SIDEBAR */}

@@ -4,16 +4,23 @@ import { supabase } from '../../lib/supabaseClient';
 import RecipeCard from '../../components/RecipeCard';
 import AdSlot from '../../components/AdSlot';
 import FilterPanel from '../../components/FilterPanel';
-import MealPlanner from '../../components/MealPlanner';
-import { REVALIDATE_TIME, BRAND_NAME } from '../../lib/constants';
+import { BRAND_NAME } from '../../lib/constants';
 import SideBar from '../../components/SideBar';
 
 const PER_PAGE = 24;
 
 // ----------------------------------------
-// 1. SERVER SIDE BUILD (ISR)
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
 // ----------------------------------------
-export async function getStaticProps() {
+export async function getServerSideProps({ res }) {
+  // Manual Cache Strategy:
+  // s-maxage=60: Cache in CDN for 60 seconds (keep the feed relatively fresh)
+  // stale-while-revalidate=300: Serve stale content while updating in background
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=60, stale-while-revalidate=300'
+  );
+
   try {
     // --- A. Query Logic ---
     const query = supabase
@@ -29,21 +36,18 @@ export async function getStaticProps() {
     } = await query.range(0, PER_PAGE - 1);
 
     if (error) {
-      console.error('ISR Supabase Error:', error);
-      // Return 404 so Cloudflare stops trying to serve a broken page
+      console.error('SSR Supabase Error:', error);
       return { notFound: true };
     }
 
     // --- C. Fetch Max Time (Safely) ---
-    // We add error handling here too
     const { data: timeData, error: timeError } = await supabase
       .from('recipes')
       .select('total_time, cook_time')
       .limit(100);
 
     if (timeError) {
-      console.error('ISR Time Fetch Error:', timeError);
-      // Fallback gracefully instead of crashing
+      console.error('SSR Time Fetch Error:', timeError);
     }
 
     // FIX: Handle empty array to prevent -Infinity
@@ -67,12 +71,10 @@ export async function getStaticProps() {
         initialRecipes: initialRecipes || [],
         initialTotalCount: count || 0,
         initialMaxTime
-      },
-      revalidate: REVALIDATE_TIME
+      }
     };
   } catch (err) {
-    console.error('ISR Critical Failure:', err);
-    // If everything explodes, return 404 or a fallback layout
+    console.error('SSR Critical Failure:', err);
     return { notFound: true };
   }
 }
@@ -85,6 +87,13 @@ export default function Recipes({
   initialTotalCount = 0,
   initialMaxTime = 60
 }) {
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Initialize state with Server Data
   const [recipes, setRecipes] = useState(initialRecipes);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
@@ -235,7 +244,7 @@ export default function Recipes({
           fetchRecipesPage(page + 1);
         }
       },
-      { rootMargin: '200px', threshold: 0.1 }
+      { rootMargin: '1200px', threshold: 0.1 }
     );
 
     observer.observe(sentinelRef.current);
@@ -278,17 +287,15 @@ export default function Recipes({
           <div className='vr-category__grid'>
             {recipes.map((r, index) => (
               <Fragment key={r.id}>
-                <RecipeCard
-                  key={r.id}
-                  recipe={r}
-                />
-
-                <AdSlot
-                  id='101'
-                  position='in-feed'
-                  index={index}
-                  every={6}
-                />
+                <RecipeCard recipe={r} />
+                {isMounted && (
+                  <AdSlot
+                    id='101'
+                    position='in-feed'
+                    index={index}
+                    every={6}
+                  />
+                )}
               </Fragment>
             ))}
           </div>

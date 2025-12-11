@@ -1,7 +1,7 @@
 // pages/tips-and-tricks/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient.js';
 import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 import TipsSidebar from '../../components/TipsAndTricks/TipsSidebar';
@@ -9,8 +9,19 @@ import AdSlot from '../../components/AdSlot';
 import TipsAndTricksCard from '../../components/TipsAndTricks/TipsAndTricksCard';
 import Breadcrumb from '../../components/Breadcrumb.js';
 
-export async function getStaticProps() {
-  const PROPS_REVALIDATE = 120; // Rebuild at most every 2 minutes
+const TAGS_PER_BATCH = 3; // Render 3 topic sections at a time
+
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// ----------------------------------------
+export async function getServerSideProps({ res }) {
+  // Manual Cache Strategy:
+  // s-maxage=120: Cache in CDN for 2 minutes
+  // stale-while-revalidate=86400: Serve stale content for up to 1 day while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=120, stale-while-revalidate=86400'
+  );
 
   const columns = [
     'id',
@@ -47,9 +58,10 @@ export async function getStaticProps() {
     });
   });
 
+  // Get top 15 tags instead of just 6 to make the infinite scroll meaningful
   const topTags = Object.entries(tagCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
+    .slice(0, 15)
     .map(([tag]) => tag);
 
   const tagPosts = {};
@@ -72,8 +84,7 @@ export async function getStaticProps() {
       latest: all,
       topTags,
       tagPosts
-    },
-    revalidate: PROPS_REVALIDATE
+    }
   };
 }
 
@@ -82,8 +93,54 @@ export default function TipsAndTricksIndex({
   topTags = [],
   tagPosts = {}
 }) {
-  const pageTitle = `${BRAND_NAME} Tips & Tricks — Cooking Guides & Kitchen Ideas`;
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
 
+  // Infinite Scroll State for Tag Sections
+  const [visibleCount, setVisibleCount] = useState(TAGS_PER_BATCH);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Compute visible tags based on scroll progress
+  const visibleTags = useMemo(() => {
+    return topTags.slice(0, visibleCount);
+  }, [topTags, visibleCount]);
+
+  const hasMoreTags = visibleCount < topTags.length;
+
+  // ----------------------------------------
+  // INFINITE SCROLL OBSERVER
+  // ----------------------------------------
+  useEffect(() => {
+    if (!hasMoreTags) return;
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          // Reveal next batch of tags
+          setVisibleCount((prev) => prev + TAGS_PER_BATCH);
+        }
+      },
+      {
+        // 👇 Load next batch when user is 1200px away from bottom
+        rootMargin: '1200px',
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMoreTags]);
+
+  /* ----------------------------------------
+      SEO
+  ---------------------------------------- */
+  const pageTitle = `${BRAND_NAME} Tips & Tricks — Cooking Guides & Kitchen Ideas`;
   const metaDescription =
     'Discover RekaDish Tips & Tricks: practical cooking advice, how-tos, and kitchen ideas to make everyday meals easier and more delicious.';
 
@@ -145,7 +202,6 @@ export default function TipsAndTricksIndex({
           href={`${BRAND_URL}/tips-and-tricks`}
         />
 
-        {/* Open Graph */}
         <meta
           property='og:title'
           content={pageTitle}
@@ -167,7 +223,6 @@ export default function TipsAndTricksIndex({
           content='website'
         />
 
-        {/* Twitter */}
         <meta
           name='twitter:card'
           content='summary_large_image'
@@ -185,7 +240,6 @@ export default function TipsAndTricksIndex({
           content={`${BRAND_URL}/images/og-tips-and-tricks.webp`}
         />
 
-        {/* Structured data */}
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: JSON.stringify(tipsSchema) }}
@@ -230,7 +284,7 @@ export default function TipsAndTricksIndex({
         {/* MAIN LAYOUT */}
         <div className='vr-home-layout vr-tips-layout'>
           <div className='vr-category__container'>
-            {/* LATEST TIPS */}
+            {/* LATEST TIPS (Always Visible) */}
             {latest.length > 0 && (
               <section
                 className='vr-section vr-tips-section'
@@ -253,19 +307,21 @@ export default function TipsAndTricksIndex({
                   {latest.map((post, index) => (
                     <Fragment key={post.id}>
                       <TipsAndTricksCard post={post} />
-                      <AdSlot
-                        id='201'
-                        position='in-feed'
-                        index={index}
-                        every={6}
-                      />
+                      {isMounted && (
+                        <AdSlot
+                          id='201'
+                          position='in-feed'
+                          index={index}
+                          every={6}
+                        />
+                      )}
                     </Fragment>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* TAG SECTIONS */}
+            {/* TAG SECTIONS (Lazy Loaded via Observer) */}
             {topTags.length > 0 && (
               <section
                 className='vr-section vr-tips-section'
@@ -284,7 +340,7 @@ export default function TipsAndTricksIndex({
                 </div>
 
                 <div className='vr-cuisines-list vr-tips-tags'>
-                  {topTags.map((tag) => (
+                  {visibleTags.map((tag) => (
                     <div
                       key={tag}
                       id={`tag-${encodeURIComponent(tag)}`}
@@ -313,6 +369,14 @@ export default function TipsAndTricksIndex({
                     </div>
                   ))}
                 </div>
+
+                {/* Sentinel Div for Infinite Scroll */}
+                {hasMoreTags && (
+                  <div
+                    ref={sentinelRef}
+                    style={{ height: '50px', opacity: 0 }}
+                  />
+                )}
               </section>
             )}
           </div>

@@ -1,27 +1,36 @@
 // pages/search.js
-import { BRAND_NAME, BRAND_URL, REVALIDATE_TIME } from '../lib/constants';
+import { BRAND_NAME, BRAND_URL } from '../lib/constants';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '../lib/supabaseClient'; // 👈 Added for Server Side Fetching
+import { useEffect, useState, useMemo, useRef, Fragment } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import CreateFromIngredients from '../components/CreateFromIngredients';
 import Link from 'next/link';
 import AdSlot from '../components/AdSlot';
 import SideBar from '../components/SideBar';
 
+const PER_PAGE = 24; // Batch size for rendering results
+
 // ----------------------------------------
-// 1. SERVER SIDE BUILD (ISR) for TRENDING
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
 // ----------------------------------------
-export async function getStaticProps() {
-  // 👇 THE SAFE COLUMN LIST
+export async function getServerSideProps({ res }) {
+  // Manual Cache Strategy:
+  // s-maxage=60: Cache "Trending" list in CDN for 60 seconds
+  // stale-while-revalidate=300: Serve stale content while updating in background
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=60, stale-while-revalidate=300'
+  );
+
   const safeColumns =
     'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   // Fetch Top Rated / Trending Recipes for the "Empty State"
   const { data: trendingRecipes } = await supabase
     .from('recipes')
-    .select(safeColumns) // 👈 Optimized Selection
+    .select(safeColumns)
     .order('rating', { ascending: false })
     .order('rating_count', { ascending: false })
     .limit(11);
@@ -29,8 +38,7 @@ export async function getStaticProps() {
   return {
     props: {
       initialTrending: trendingRecipes || []
-    },
-    revalidate: REVALIDATE_TIME // Update trending list every 60s
+    }
   };
 }
 
@@ -41,30 +49,75 @@ export default function SearchResultsPage({ initialTrending = [] }) {
   const router = useRouter();
   const { q } = router.query;
 
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false); // Default to false (we have trending data)
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Search Data State
+  const [allResults, setAllResults] = useState([]); // Stores ALL fetched results
+  const [loading, setLoading] = useState(false);
+
+  // Infinite Scroll State
+  const [visibleCount, setVisibleCount] = useState(PER_PAGE);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   /* ----------------------------------------
       LOAD SEARCH RESULTS (Client Side)
   ---------------------------------------- */
   useEffect(() => {
     if (!q) {
-      setResults([]);
+      setAllResults([]);
       return;
     }
 
     setLoading(true);
+    // Reset visible count on new search
+    setVisibleCount(PER_PAGE);
 
-    // Note: We can't optimize this API call here without editing /api/search
-    // But since it's a specific search, the result set is usually small anyway.
     fetch(`/api/search?q=${encodeURIComponent(q)}`)
       .then((r) => r.json())
       .then((d) => {
-        setResults(d.data || []);
+        setAllResults(d.data || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [q]);
+
+  // Compute the currently visible slice of results
+  const visibleResults = useMemo(() => {
+    return allResults.slice(0, visibleCount);
+  }, [allResults, visibleCount]);
+
+  const hasMore = visibleCount < allResults.length;
+
+  /* ----------------------------------------
+      INFINITE SCROLL OBSERVER
+  ---------------------------------------- */
+  useEffect(() => {
+    if (!hasMore) return;
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          // Reveal next batch
+          setVisibleCount((prev) => prev + PER_PAGE);
+        }
+      },
+      {
+        // 👇 Load next batch when user is 1200px away from bottom
+        rootMargin: '1200px',
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   /* ----------------------------------------
       SEO METADATA
@@ -188,21 +241,20 @@ export default function SearchResultsPage({ initialTrending = [] }) {
 
             {loading ? (
               <p className='vr-search-results__empty'>Searching…</p>
-            ) : results.length > 0 ? (
+            ) : visibleResults.length > 0 ? (
               <div className='vr-category__grid'>
-                {results.map((recipe, index) => (
-                  <>
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                    />
-                    <AdSlot
-                      id='101'
-                      position='in-feed'
-                      index={index}
-                      every={6}
-                    />
-                  </>
+                {visibleResults.map((recipe, index) => (
+                  <Fragment key={recipe.id}>
+                    <RecipeCard recipe={recipe} />
+                    {isMounted && (
+                      <AdSlot
+                        id='101'
+                        position='in-feed'
+                        index={index}
+                        every={6}
+                      />
+                    )}
+                  </Fragment>
                 ))}
               </div>
             ) : (
@@ -211,6 +263,14 @@ export default function SearchResultsPage({ initialTrending = [] }) {
                   ? `No recipes found for "${q}". Try checking the trending recipes below.`
                   : 'Enter a keyword above to find delicious recipes.'}
               </p>
+            )}
+
+            {/* Sentinel Div for Infinite Scroll */}
+            {hasMore && !loading && (
+              <div
+                ref={sentinelRef}
+                style={{ height: '50px', opacity: 0 }}
+              />
             )}
           </div>
 
@@ -233,18 +293,17 @@ export default function SearchResultsPage({ initialTrending = [] }) {
               </div>
               <div className='vr-category__grid'>
                 {initialTrending.map((recipe, index) => (
-                  <>
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                    />
-                    <AdSlot
-                      id='101'
-                      position='in-feed'
-                      index={index}
-                      every={6}
-                    />
-                  </>
+                  <Fragment key={recipe.id}>
+                    <RecipeCard recipe={recipe} />
+                    {isMounted && (
+                      <AdSlot
+                        id='101'
+                        position='in-feed'
+                        index={index}
+                        every={6}
+                      />
+                    )}
+                  </Fragment>
                 ))}
               </div>
             </div>

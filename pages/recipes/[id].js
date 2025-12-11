@@ -2,22 +2,21 @@
 import Head from 'next/head';
 import { supabase } from '../../lib/supabaseClient';
 import RecipePage from '../../components/RecipePage/RecipePage';
-import { REVALIDATE_TIME, BRAND_NAME, BRAND_URL } from '../../lib/constants';
+import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 
-// 1. Tell Next.js how to handle these dynamic paths
-export async function getStaticPaths() {
-  // We return an empty array to keep build times fast.
-  // 'blocking' means the first visitor will wait for the page to generate (SSR-style),
-  // and every subsequent visitor will get the instant cached version.
-  return {
-    paths: [],
-    fallback: 'blocking'
-  };
-}
-
-// 2. Use StaticProps instead of ServerSideProps
-export async function getStaticProps({ params }) {
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// ----------------------------------------
+export async function getServerSideProps({ params, res }) {
   const { id } = params;
+
+  // Manual Cache Strategy:
+  // s-maxage=3600: Cache this recipe page in CDN for 1 hour
+  // stale-while-revalidate=86400: Serve stale version for up to 1 day while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=3600, stale-while-revalidate=86400'
+  );
 
   // Query logic remains exactly the same
   const { data: recipe, error } = await supabase
@@ -31,11 +30,7 @@ export async function getStaticProps({ params }) {
   }
 
   return {
-    props: { recipe },
-    // 👇 The Magic Speed Boost: Cache this page!
-    // It will be treated as static, but re-generated in the background
-    // if a new request comes in after 60 seconds.
-    revalidate: REVALIDATE_TIME
+    props: { recipe }
   };
 }
 

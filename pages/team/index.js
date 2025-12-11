@@ -7,7 +7,18 @@ import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 import { AUTHOR_LIST, AUTHORS } from '../../lib/authors';
 import Breadcrumb from '../../components/Breadcrumb.js';
 
-export async function getStaticProps() {
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// ----------------------------------------
+export async function getServerSideProps({ res }) {
+  // Manual Cache Strategy:
+  // s-maxage=600: Cache in CDN for 10 minutes
+  // stale-while-revalidate=86400: Serve stale content for up to 1 day while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=600, stale-while-revalidate=86400'
+  );
+
   // Aggregate basic stats from blogs for each author
   const { data: blogRows = [] } = await supabase
     .from('blogs')
@@ -33,8 +44,7 @@ export async function getStaticProps() {
   return {
     props: {
       statsByAuthor
-    },
-    revalidate: 600 // 10 minutes
+    }
   };
 }
 

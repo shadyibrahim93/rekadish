@@ -1,10 +1,10 @@
 import Head from 'next/head';
-import React, { Fragment, useEffect, useState, useRef } from 'react'; // Added React import
+import React, { Fragment, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import Breadcrumb from '../components/Breadcrumb';
 import FilterPanel from '../components/FilterPanel';
-import { REVALIDATE_TIME, BRAND_NAME } from '../lib/constants';
+import { BRAND_NAME } from '../lib/constants';
 import SideBar from '../components/SideBar';
 import AdSlot from '../components/AdSlot';
 import { useModal } from '../components/ModalContext';
@@ -48,20 +48,17 @@ const SERVING_CONFIG = {
 };
 
 // ----------------------------------------
-// 1. STATIC PATHS
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
 // ----------------------------------------
-export async function getStaticPaths() {
-  const slugs = Object.keys(SERVING_CONFIG);
-  return {
-    paths: slugs.map((slug) => ({ params: { slug } })),
-    fallback: 'blocking'
-  };
-}
+export async function getServerSideProps({ params, res }) {
+  // Manual Caching Strategy to bypass ISR Queue issues
+  // s-maxage=3600: Cache in CDN for 1 hour
+  // stale-while-revalidate=86400: If stale, show old version for up to 1 day while updating in background
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=3600, stale-while-revalidate=86400'
+  );
 
-// ----------------------------------------
-// 2. SERVER SIDE BUILD (ISR)
-// ----------------------------------------
-export async function getStaticProps({ params }) {
   const rawSlug = params.slug;
   const slug = String(rawSlug).toLowerCase();
   const config = SERVING_CONFIG[slug];
@@ -85,14 +82,13 @@ export async function getStaticProps({ params }) {
     .limit(300);
 
   if (error) {
-    console.error('ISR Error:', error);
+    console.error('SSR Error:', error);
     return { notFound: true };
   }
 
   const safeAll = allRecipes || [];
   const initialRecipes = safeAll.slice(0, PER_PAGE);
 
-  // 🆕 FIX: Safety check for Math.max to prevent -Infinity crash
   const initialMaxTime =
     safeAll.length > 0
       ? Math.max(...safeAll.map((r) => r.total_time || r.cook_time || 0))
@@ -106,13 +102,12 @@ export async function getStaticProps({ params }) {
       initialTotalCount: count || safeAll.length || 0,
       initialMaxTime: Number.isFinite(initialMaxTime) ? initialMaxTime : 60,
       initialAllRecipes: safeAll
-    },
-    revalidate: REVALIDATE_TIME || 3600
+    }
   };
 }
 
 // ----------------------------------------
-// 3. CLIENT SIDE COMPONENT
+// 2. CLIENT SIDE COMPONENT
 // ----------------------------------------
 export default function ServingTimePage({
   slug,
@@ -123,14 +118,14 @@ export default function ServingTimePage({
   initialAllRecipes = []
 }) {
   const config = SERVING_CONFIG[slug];
-
-  // Early return if invalid (client-side safety)
-  if (!config) {
-    return <div className='vr-container'>Invalid serving time.</div>;
-  }
-
-  const { pageTitle, heroImage, heading, metaDescription } = config;
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
+
+  // Hydration Safety State
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [recipes, setRecipes] = useState(initialRecipes);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
@@ -151,9 +146,14 @@ export default function ServingTimePage({
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
   const isLoadingRef = useRef(false);
-
-  // 🆕 FIX: AbortController ref
   const abortControllerRef = useRef(null);
+
+  // Early return if invalid (client-side safety)
+  if (!config) {
+    return <div className='vr-container'>Invalid serving time.</div>;
+  }
+
+  const { pageTitle, heroImage, heading, metaDescription } = config;
 
   // ----------------------------------------
   // HELPER: BUILD QUERY STRING
@@ -177,7 +177,6 @@ export default function ServingTimePage({
   // FETCH RECIPES PAGE (Client Logic)
   // ----------------------------------------
   const fetchRecipesPage = async (pageNumber, replace = false) => {
-    // 🆕 FIX: Cancel previous pending request
     if (replace && abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -201,7 +200,6 @@ export default function ServingTimePage({
         setTotalCount(json.total_count || json.count || 0);
       }
 
-      // 🆕 FIX: Deduplicate recipes based on ID
       setRecipes((prev) => {
         const currentList = replace ? [] : prev;
         const existingIds = new Set(currentList.map((r) => r.id));
@@ -263,7 +261,7 @@ export default function ServingTimePage({
 
         fetchRecipesPage(page + 1);
       },
-      { rootMargin: '200px', threshold: 0.1 }
+      { rootMargin: '1200px', threshold: 0.1 }
     );
 
     obs.observe(sentinelRef.current);
@@ -336,15 +334,16 @@ export default function ServingTimePage({
 
           <div className='vr-category__grid'>
             {recipes.map((r, index) => (
-              /* 🆕 FIX: Use Fragment with explicit key, fixed spelling typo */
               <Fragment key={r.id}>
                 <RecipeCard recipe={r} />
-                <AdSlot
-                  id='101'
-                  position='in-feed'
-                  index={index}
-                  every={6}
-                />
+                {isMounted && (
+                  <AdSlot
+                    id='101'
+                    position='in-feed'
+                    index={index}
+                    every={6}
+                  />
+                )}
               </Fragment>
             ))}
           </div>

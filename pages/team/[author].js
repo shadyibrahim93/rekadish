@@ -2,7 +2,7 @@
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, Fragment } from 'react'; // Added Fragment, useEffect
 import { supabase } from '../../lib/supabaseClient';
 import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 import { AUTHORS } from '../../lib/authors';
@@ -23,22 +23,18 @@ const TIPS_SORT_OPTIONS = [
   { id: 'popular', label: 'Most Popular' }
 ];
 
-// --------- STATIC PATHS ----------
-export async function getStaticPaths() {
-  const slugs = Object.keys(AUTHORS);
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// ----------------------------------------
+export async function getServerSideProps({ params, res }) {
+  // Manual Cache Strategy:
+  // s-maxage=600: Cache in CDN for 10 minutes (Author profiles change infrequently)
+  // stale-while-revalidate=86400: Serve stale content for up to 1 day while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=600, stale-while-revalidate=86400'
+  );
 
-  const paths = slugs.map((slug) => ({
-    params: { author: slug }
-  }));
-
-  return {
-    paths,
-    fallback: 'blocking'
-  };
-}
-
-// --------- STATIC PROPS ----------
-export async function getStaticProps({ params }) {
   const { author } = params;
   const authorMeta = AUTHORS[author];
 
@@ -111,8 +107,7 @@ export async function getStaticProps({ params }) {
       posts,
       recipes,
       signatureRecipe
-    },
-    revalidate: 600
+    }
   };
 }
 
@@ -126,6 +121,13 @@ export default function AuthorProfile({
 }) {
   const [activeTab, setActiveTab] = useState('recipes'); // 'recipes' | 'tips'
   const [sort, setSort] = useState('newest');
+
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const pageTitle = `${author.name} — ${author.role} | ${BRAND_NAME}`;
   const canonicalUrl = `${BRAND_URL}/team/${author.slug}`;
@@ -449,20 +451,19 @@ export default function AuthorProfile({
                 ) : (
                   <div className='vr-category__grid vr-author-grid'>
                     {sortedRecipes.map((recipe, index) => (
-                      <>
-                        <div
-                          key={recipe.id}
-                          className='vr-author-grid__item'
-                        >
+                      <Fragment key={recipe.id}>
+                        <div className='vr-author-grid__item'>
                           <RecipeCard recipe={recipe} />
                         </div>
-                        <AdSlot
-                          id='601'
-                          position='in-feed'
-                          index={index}
-                          every={5}
-                        />
-                      </>
+                        {isMounted && (
+                          <AdSlot
+                            id='601'
+                            position='in-feed'
+                            index={index}
+                            every={5}
+                          />
+                        )}
+                      </Fragment>
                     ))}
                   </div>
                 )}
@@ -510,33 +511,6 @@ export default function AuthorProfile({
                 Go to Tips &amp; Tricks
               </Link>
             </div>
-
-            {/* <div className='vr-author-engage__card'>
-              <h2 className='vr-category__title'>
-                Get {firstName}&apos;s newest recipes
-              </h2>
-              <p>
-                Stay in the loop when new recipes and guides from {firstName} go
-                live. Add this page to your bookmarks, or plug your email into
-                your favorite newsletter tool later.
-              </p>
-              <form
-                className='vr-author-newsletter'
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <input
-                  type='email'
-                  placeholder='Email (for your future form)'
-                  className='vr-author-newsletter__input'
-                />
-                <button
-                  type='submit'
-                  className='vr-hero__badge vr-author-newsletter__btn'
-                >
-                  Save for later
-                </button>
-              </form>
-            </div> */}
           </section>
         </div>
       </div>

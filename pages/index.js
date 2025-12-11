@@ -9,28 +9,32 @@ import { BRAND_NAME, BRAND_URL } from '../lib/constants';
 import SideBar from '../components/SideBar.js';
 import AdSlot from '../components/AdSlot';
 
-// 👇 1. THIS RUNS ON THE SERVER (ISR)
-export async function getStaticProps() {
-  const PROPS_REVALIDATE = 60; // Update homepage at most once every 60 seconds
+// 👇 1. CHANGED: getServerSideProps (Bypasses the broken ISR Queue)
+export async function getServerSideProps({ res }) {
+  // We manually set caching here.
+  // s-maxage=60: Cloudflare/CDN caches this page for 60 seconds.
+  // stale-while-revalidate=300: If 60s passes, show old version while fetching new one in background.
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=60, stale-while-revalidate=300'
+  );
 
   // Define the lightweight columns we need for cards
-  // Excludes heavy fields like 'instructions', 'ingredients', 'nutrition_info'
   const cardColumns =
     'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
-  // --- A. Fetch Top Rated (Efficiently via DB sort) ---
+  // --- A. Fetch Top Rated ---
   const { data: topRated } = await supabase
     .from('recipes')
-    .select(cardColumns) // 👈 OPTIMIZED
+    .select(cardColumns)
     .order('rating', { ascending: false })
     .order('rating_count', { ascending: false })
     .limit(8);
 
   // --- B. Fetch a batch to determine Cuisines & Serving Times ---
-  // We fetch a larger batch to find what tags/cuisines exist
   const { data: batchRecipes } = await supabase
     .from('recipes')
-    .select(cardColumns) // 👈 OPTIMIZED
+    .select(cardColumns)
     .limit(300);
 
   const all = batchRecipes || [];
@@ -47,26 +51,22 @@ export async function getStaticProps() {
   // 2. Process Unique Cuisines
   const uniqueCuisines = [
     ...new Set(all.map((r) => r.cuisine?.trim()).filter(Boolean))
-  ].slice(0, 8); // Limit to top 8 cuisines
+  ].slice(0, 8);
 
   // --- C. Fetch Recipes for those Specific Cuisines ---
-  // We use Promise.all to fetch them in parallel (FAST)
   const cuisineRecipes = {};
-
   await Promise.all(
     uniqueCuisines.map(async (cuisine) => {
       const { data } = await supabase
         .from('recipes')
-        .select(cardColumns) // 👈 OPTIMIZED
+        .select(cardColumns)
         .eq('cuisine', cuisine)
         .limit(8);
-
       cuisineRecipes[cuisine] = data || [];
     })
   );
 
-  // ⚠️ CRITICAL FIX: Serialization Safety
-  // Ensure no "undefined" values are passed to props (Next.js crash prevention)
+  // Safety: Ensure no undefined values passed to props
   const safeProps = JSON.parse(
     JSON.stringify({
       topRated: topRated || [],
@@ -77,12 +77,12 @@ export async function getStaticProps() {
   );
 
   return {
-    props: safeProps,
-    revalidate: PROPS_REVALIDATE
+    props: safeProps
+    // ❌ REMOVED: revalidate: 60 (This was causing the "Dummy queue" crash)
   };
 }
 
-// 👇 2. COMPONENT NOW JUST RENDERS (Instant Load)
+// 👇 2. COMPONENT (Client Side)
 export default function Home({
   topRated = [],
   servingTimeRecipes = {},
@@ -91,8 +91,7 @@ export default function Home({
 }) {
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
 
-  // ⚠️ CRITICAL FIX: Client-Side Mounting State
-  // This prevents hydration mismatches caused by AdSlots or Browser Extensions
+  // Client-Side Mounting State (Prevents Hydration Mismatch)
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -162,7 +161,6 @@ export default function Home({
   return (
     <>
       <Head>
-        {/* BASIC SEO */}
         <title>{BRAND_NAME} — Discover delightful recipes</title>
         <meta
           name='description'
@@ -180,14 +178,10 @@ export default function Home({
           name='publisher'
           content={`${BRAND_NAME}`}
         />
-
-        {/* CANONICAL */}
         <link
           rel='canonical'
           href={BRAND_URL}
         />
-
-        {/* OPEN GRAPH */}
         <meta
           property='og:title'
           content={`${BRAND_NAME} — Discover delightful recipes`}
@@ -212,8 +206,6 @@ export default function Home({
           property='og:site_name'
           content={`${BRAND_NAME}`}
         />
-
-        {/* TWITTER */}
         <meta
           name='twitter:card'
           content='summary_large_image'
@@ -231,7 +223,6 @@ export default function Home({
           content={`${BRAND_URL}/images/og-home.webp`}
         />
 
-        {/* STRUCTURED DATA */}
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
@@ -299,12 +290,7 @@ export default function Home({
               <div className='vr-category__grid'>
                 {topRated.map((r, index) => (
                   <Fragment key={r.id}>
-                    <RecipeCard
-                      // key removed here, handled by Fragment
-                      recipe={r}
-                    />
-
-                    {/* Hydration Safe Ad Rendering */}
+                    <RecipeCard recipe={r} />
                     {isMounted && (
                       <AdSlot
                         id='101'
@@ -348,8 +334,6 @@ export default function Home({
                       {recipes.map((r, index) => (
                         <Fragment key={r.id}>
                           <RecipeCard recipe={r} />
-
-                          {/* Hydration Safe Ad Rendering */}
                           {isMounted && (
                             <AdSlot
                               id='101'
@@ -396,8 +380,6 @@ export default function Home({
                       {(cuisineRecipes[cuisineName] || []).map((r, index) => (
                         <Fragment key={r.id}>
                           <RecipeCard recipe={r} />
-
-                          {/* Hydration Safe Ad Rendering */}
                           {isMounted && (
                             <AdSlot
                               id='101'

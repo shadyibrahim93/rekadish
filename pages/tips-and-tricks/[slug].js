@@ -2,8 +2,8 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import dynamic from 'next/dynamic'; // Added for code splitting
-import { Fragment, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { Fragment, useEffect, useState } from 'react'; // Added useState
 import { IoShareOutline } from 'react-icons/io5';
 import { supabase } from '../../lib/supabaseClient';
 import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
@@ -19,38 +19,25 @@ const PostComments = dynamic(
   () => import('../../components/TipsAndTricks/PostComments'),
   {
     loading: () => <p>Loading comments...</p>,
-    ssr: false // Comments are usually client-side interaction heavy
+    ssr: false
   }
 );
 
-// --------- STATIC PATHS ----------
-export async function getStaticPaths() {
-  // OPTIMIZATION: Reduced limit from 500 to 100 to speed up build time.
-  // Older posts will be generated on-demand via fallback: 'blocking'
-  const { data } = await supabase
-    .from('blogs')
-    .select('slug')
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  const paths =
-    data?.map((row) => ({
-      params: { slug: row.slug }
-    })) || [];
-
-  return {
-    paths,
-    fallback: 'blocking'
-  };
-}
-
-// --------- STATIC PROPS ----------
-export async function getStaticProps({ params }) {
+// ----------------------------------------
+// 1. SERVER SIDE RENDER (SSR) - Replaces ISR
+// ----------------------------------------
+export async function getServerSideProps({ params, res }) {
   const { slug } = params;
 
+  // Manual Cache Strategy:
+  // s-maxage=120: Cache in CDN for 2 minutes (since view counts update often)
+  // stale-while-revalidate=86400: Serve stale content for up to 1 day while updating
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=120, stale-while-revalidate=86400'
+  );
+
   // OPTIMIZATION: Split columns.
-  // We only need the heavy 'content' and 'toc' for the main post.
-  // Listing cards (related, latest, author) should NOT fetch the body text.
   const baseColumns = [
     'id',
     'title',
@@ -71,7 +58,7 @@ export async function getStaticProps({ params }) {
 
   const fullPostColumns = `${baseColumns}, content, toc, seo_title, seo_description, related_recipe_ids`;
 
-  // 1. Fetch main post first (We need this to know tags/author for subsequent queries)
+  // 1. Fetch main post
   const { data: post, error } = await supabase
     .from('blogs')
     .select(fullPostColumns)
@@ -89,7 +76,7 @@ export async function getStaticProps({ params }) {
   promises.push(
     supabase
       .from('blogs')
-      .select(baseColumns) // Light query
+      .select(baseColumns)
       .order('created_at', { ascending: false })
       .limit(12)
   );
@@ -129,7 +116,6 @@ export async function getStaticProps({ params }) {
   const rawIds = post.related_recipe_ids;
   let recipeIds = [];
 
-  // Logic to parse IDs
   if (Array.isArray(rawIds)) {
     recipeIds = rawIds.filter(Boolean);
   } else if (typeof rawIds === 'string' && rawIds.trim()) {
@@ -159,7 +145,7 @@ export async function getStaticProps({ params }) {
     promises.push(Promise.resolve({ data: [] }));
   }
 
-  // OPTIMIZATION: Await all DB requests simultaneously
+  // Await all DB requests simultaneously
   const [latestRes, relatedRes, authorRes, recipesRes] = await Promise.all(
     promises
   );
@@ -169,7 +155,7 @@ export async function getStaticProps({ params }) {
   const authorPosts = authorRes.data || [];
   const recipesData = recipesRes.data || [];
 
-  // Process Tags (Sync operation, fast)
+  // Process Tags
   const tagCounts = {};
   latest.forEach((p) => {
     (p.tags || []).forEach((tag) => {
@@ -199,8 +185,7 @@ export async function getStaticProps({ params }) {
       related,
       authorPosts,
       relatedRecipes
-    },
-    revalidate: 120
+    }
   };
 }
 
@@ -216,6 +201,13 @@ export default function TipsAndTricksPost({
   const { user } = useUser();
   const TRACK_VIEWS_ON_LOCAL = false;
 
+  // Hydration Safety
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   useEffect(() => {
     const incrementViewCount = async () => {
       if (typeof window === 'undefined') return;
@@ -230,7 +222,6 @@ export default function TipsAndTricksPost({
       if (isLocalhost && !TRACK_VIEWS_ON_LOCAL) return;
 
       try {
-        // Fire and forget - don't await this to block UI
         supabase
           .from('blogs')
           .update({ view_count: (post.view_count || 0) + 1 })
@@ -277,7 +268,6 @@ export default function TipsAndTricksPost({
       })
     : null;
 
-  // Simple reading time estimate based on content length
   const readingTimeMinutes = (() => {
     if (!post.content) return null;
     const words = post.content
@@ -332,7 +322,7 @@ export default function TipsAndTricksPost({
     }
   };
 
-  // Normalize TOC (jsonb or text)
+  // Normalize TOC
   let tocArray = [];
   if (Array.isArray(post.toc)) {
     tocArray = post.toc;
@@ -398,7 +388,6 @@ export default function TipsAndTricksPost({
           content={ogImage}
         />
 
-        {/* Structured data */}
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: JSON.stringify(tipsPostSchema) }}
@@ -408,7 +397,6 @@ export default function TipsAndTricksPost({
       <Breadcrumb />
 
       <div className='vr-tips vr-tips--post'>
-        {/* HERO HEADER ABOVE LAYOUT */}
         <header className='vr-tips-post__header'>
           <div className='vr-tips-post__hero'>
             <img
@@ -484,17 +472,18 @@ export default function TipsAndTricksPost({
           </div>
         </header>
 
-        <AdSlot
-          id='401'
-          position='in-article'
-          height='auto'
-        />
+        {isMounted && (
+          <AdSlot
+            id='401'
+            position='in-article'
+            height='auto'
+          />
+        )}
 
-        {/* CONTENT (NO RIGHT SIDEBAR) */}
         <div className='vr-home-layout vr-tips-layout'>
           {/* MAIN COLUMN */}
           <article className='vr-category__container vr-tips-post'>
-            {/* INLINE TOC AT TOP OF ARTICLE */}
+            {/* INLINE TOC */}
             {tocArray.length > 0 && (
               <section
                 className='vr-section vr-tips-post__toc'
@@ -561,12 +550,14 @@ export default function TipsAndTricksPost({
                         recipe={recipe}
                         hideTime
                       />
-                      <AdSlot
-                        id='101'
-                        position='in-feed'
-                        index={index}
-                        every={6}
-                      />
+                      {isMounted && (
+                        <AdSlot
+                          id='101'
+                          position='in-feed'
+                          index={index}
+                          every={6}
+                        />
+                      )}
                     </Fragment>
                   ))}
                 </div>
@@ -611,7 +602,7 @@ export default function TipsAndTricksPost({
               </section>
             )}
 
-            {/* COMMENTS - Dynamic Load */}
+            {/* COMMENTS */}
             <section className='vr-section vr-tips-section'>
               <PostComments
                 postId={post.id}
