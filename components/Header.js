@@ -72,7 +72,7 @@ export default function Header() {
               title={user ? 'My Kitchen' : 'Sign In'}
             >
               {!loading && user ? (
-                <IoPerson size={22} />
+                <IoPerson size={24} />
               ) : (
                 <IoPersonOutline size={24} />
               )}
