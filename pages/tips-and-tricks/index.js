@@ -45,7 +45,7 @@ export async function getServerSideProps({ res }) {
     .from('blogs')
     .select(columns)
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(100);
 
   const all = latest || [];
 
@@ -202,6 +202,7 @@ export default function TipsAndTricksIndex({
           href={`${BRAND_URL}/tips-and-tricks`}
         />
 
+        {/* Open Graph */}
         <meta
           property='og:title'
           content={pageTitle}
@@ -223,6 +224,7 @@ export default function TipsAndTricksIndex({
           content='website'
         />
 
+        {/* Twitter */}
         <meta
           name='twitter:card'
           content='summary_large_image'
@@ -240,6 +242,7 @@ export default function TipsAndTricksIndex({
           content={`${BRAND_URL}/images/og-tips-and-tricks.webp`}
         />
 
+        {/* Structured data */}
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: JSON.stringify(tipsSchema) }}
@@ -284,7 +287,7 @@ export default function TipsAndTricksIndex({
         {/* MAIN LAYOUT */}
         <div className='vr-home-layout vr-tips-layout'>
           <div className='vr-category__container'>
-            {/* LATEST TIPS (Always Visible) */}
+            {/* LATEST TIPS */}
             {latest.length > 0 && (
               <section
                 className='vr-section vr-tips-section'
@@ -318,65 +321,6 @@ export default function TipsAndTricksIndex({
                     </Fragment>
                   ))}
                 </div>
-              </section>
-            )}
-
-            {/* TAG SECTIONS (Lazy Loaded via Observer) */}
-            {topTags.length > 0 && (
-              <section
-                className='vr-section vr-tips-section'
-                aria-labelledby='tips-tags-heading'
-              >
-                <div className='vr-category__header vr-tips-section__header'>
-                  <h2
-                    id='tips-tags-heading'
-                    className='vr-category__title'
-                  >
-                    Explore by Topic
-                  </h2>
-                  <p className='vr-tips-section__subtitle'>
-                    Jump into focused tips on the topics you care about most.
-                  </p>
-                </div>
-
-                <div className='vr-cuisines-list vr-tips-tags'>
-                  {visibleTags.map((tag) => (
-                    <div
-                      key={tag}
-                      id={`tag-${encodeURIComponent(tag)}`}
-                      className='vr-section vr-tips-tag-block'
-                    >
-                      <div className='vr-category__header vr-tips-tag-header'>
-                        <h3 className='vr-category__title'>#{tag} Tips</h3>
-                        <Link
-                          href={`/tips-and-tricks?tag=${encodeURIComponent(
-                            tag
-                          )}`}
-                          className='vr-category__link'
-                        >
-                          View all #{tag} tips →
-                        </Link>
-                      </div>
-
-                      <div className='vr-category__grid vr-tips-grid'>
-                        {(tagPosts[tag] || []).map((post) => (
-                          <TipsAndTricksCard
-                            key={post.id}
-                            post={post}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Sentinel Div for Infinite Scroll */}
-                {hasMoreTags && (
-                  <div
-                    ref={sentinelRef}
-                    style={{ height: '50px', opacity: 0 }}
-                  />
-                )}
               </section>
             )}
           </div>
