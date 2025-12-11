@@ -147,7 +147,7 @@ export async function getServerSideProps({ params, res }) {
 
   if (recipeIds.length > 0) {
     const recipeColumns =
-      'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+      'id, title, description slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
     promises.push(
       supabase.from('recipes').select(recipeColumns).in('id', recipeIds)
     );

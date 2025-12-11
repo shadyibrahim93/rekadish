@@ -110,11 +110,11 @@ export default function RecipeCard({ recipe, hideDifficulty, hideTime }) {
             <Link href={`/recipes/${recipe.slug}`}>
               <h3 className='vr-recipe-card__title'>{recipe.title}</h3>
             </Link>
-
             <div className='vr-recipe-card__actions'>
               <RecipeCategoryMenu recipeId={recipe.id} />
             </div>
           </div>
+          <p className='vr-tips-card__excerpt'>{recipe.description}</p>
 
           <div className='vr-recipe-card__meta'>
             <RatingWidget

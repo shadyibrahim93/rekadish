@@ -2,7 +2,7 @@
 import { BRAND_NAME, BRAND_URL } from '../lib/constants';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useMemo, useRef, Fragment } from 'react';
+import { useEffect, useState, useMemo, Fragment } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import CreateFromIngredients from '../components/CreateFromIngredients';
@@ -25,7 +25,7 @@ export async function getServerSideProps({ res }) {
   );
 
   const safeColumns =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+    'id, title, description, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   // Fetch Top Rated / Trending Recipes for the "Empty State"
   const { data: trendingRecipes } = await supabase
@@ -56,9 +56,8 @@ export default function SearchResultsPage({ initialTrending = [] }) {
   const [allResults, setAllResults] = useState([]); // Stores ALL fetched results
   const [loading, setLoading] = useState(false);
 
-  // Infinite Scroll State
+  // Pagination (replaces infinite scroll)
   const [visibleCount, setVisibleCount] = useState(PER_PAGE);
-  const sentinelRef = useRef(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -94,30 +93,12 @@ export default function SearchResultsPage({ initialTrending = [] }) {
   const hasMore = visibleCount < allResults.length;
 
   /* ----------------------------------------
-      INFINITE SCROLL OBSERVER
+      LOAD MORE HANDLER (button)
   ---------------------------------------- */
-  useEffect(() => {
+  const handleLoadMore = () => {
     if (!hasMore) return;
-    if (!sentinelRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting) {
-          // Reveal next batch
-          setVisibleCount((prev) => prev + PER_PAGE);
-        }
-      },
-      {
-        // 👇 Load next batch when user is 1200px away from bottom
-        rootMargin: '1200px',
-        threshold: 0.1
-      }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore]);
+    setVisibleCount((prev) => prev + PER_PAGE);
+  };
 
   /* ----------------------------------------
       SEO METADATA
@@ -242,35 +223,42 @@ export default function SearchResultsPage({ initialTrending = [] }) {
             {loading ? (
               <p className='vr-search-results__empty'>Searching…</p>
             ) : visibleResults.length > 0 ? (
-              <div className='vr-category__grid'>
-                {visibleResults.map((recipe, index) => (
-                  <Fragment key={recipe.id}>
-                    <RecipeCard recipe={recipe} />
-                    {isMounted && (
-                      <AdSlot
-                        id='101'
-                        position='in-feed'
-                        index={index}
-                        every={6}
-                      />
-                    )}
-                  </Fragment>
-                ))}
-              </div>
+              <>
+                <div className='vr-category__grid'>
+                  {visibleResults.map((recipe, index) => (
+                    <Fragment key={recipe.id}>
+                      <RecipeCard recipe={recipe} />
+                      {isMounted && (
+                        <AdSlot
+                          id='101'
+                          position='in-feed'
+                          index={index}
+                          every={6}
+                        />
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
+
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className='vr-load-more-wrapper'>
+                    <button
+                      type='button'
+                      className='vr-load-more-btn'
+                      onClick={handleLoadMore}
+                    >
+                      Load more results
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <p className='vr-search-results__empty'>
                 {q
                   ? `No recipes found for "${q}". Try checking the trending recipes below.`
                   : 'Enter a keyword above to find delicious recipes.'}
               </p>
-            )}
-
-            {/* Sentinel Div for Infinite Scroll */}
-            {hasMore && !loading && (
-              <div
-                ref={sentinelRef}
-                style={{ height: '50px', opacity: 0 }}
-              />
             )}
           </div>
 

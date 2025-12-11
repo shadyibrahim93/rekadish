@@ -11,7 +11,7 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
 ------------------------------------------ */
 .vr-home-layout {
   display: flex;
-  column-gap: 1.25rem;
+  gap: 1rem;
 
   @media (max-width: 1078px) {
     flex-direction: column;
@@ -64,7 +64,7 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
     align-items: stretch;
 
     .vr-recipe-card__body {
-      flex: 1;
+      flex: 1 auto;
     }
   }
 }
@@ -128,6 +128,7 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.3;
+  margin-bottom: 0.3rem;
 }
 
 .vr-recipe-card__meta {

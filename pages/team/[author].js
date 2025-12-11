@@ -68,7 +68,7 @@ export async function getServerSideProps({ params, res }) {
   const recipeIds = Array.from(recipeIdSet);
 
   const recipeColumns =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+    'id, title, description, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   let recipes = [];
   if (recipeIds.length > 0) {

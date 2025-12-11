@@ -1,19 +1,23 @@
-// components/CreateFromIngredients.js
 import { useState, useEffect, useMemo } from 'react';
 import RecipeCard from './RecipeCard';
 import AdSlot from './AdSlot';
 import { useModal } from './ModalContext';
 
+const PER_PAGE = 24;
+
 export default function CreateFromIngredients() {
   const [ingredientInput, setIngredientInput] = useState('');
   const [selectedIngredients, setSelectedIngredients] = useState([]);
 
-  // 🆕 STATE: Store the full recipe pool locally for accurate filtering
+  // Store the full recipe pool locally for accurate filtering
   const [allRecipes, setAllRecipes] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Hydration Safety
   const [isMounted, setIsMounted] = useState(false);
+
+  // Pagination for matched recipes (Load More)
+  const [visibleCount, setVisibleCount] = useState(PER_PAGE);
 
   const { setShowIngredientsModal } = useModal();
 
@@ -43,8 +47,6 @@ export default function CreateFromIngredients() {
     async function loadRecipePool() {
       try {
         // Fetch a large batch to ensure we have a good pool for filtering.
-        // This ensures filtering happens on the parsed JSON (accurate),
-        // rather than a fuzzy DB text search (inaccurate).
         const res = await fetch('/api/recipes?page=1&per_page=1000');
         const json = await res.json();
 
@@ -82,6 +84,17 @@ export default function CreateFromIngredients() {
     });
   }, [allRecipes, selectedIngredients]);
 
+  // Reset pagination when filters (selectedIngredients) change
+  useEffect(() => {
+    setVisibleCount(PER_PAGE);
+  }, [selectedIngredients, matchedRecipes.length]);
+
+  const visibleRecipes = useMemo(() => {
+    return matchedRecipes.slice(0, visibleCount);
+  }, [matchedRecipes, visibleCount]);
+
+  const hasMore = visibleCount < matchedRecipes.length;
+
   // Input Handlers
   function slugify(str) {
     return str.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -104,6 +117,11 @@ export default function CreateFromIngredients() {
   function removeIngredient(slug) {
     setSelectedIngredients(selectedIngredients.filter((i) => i !== slug));
   }
+
+  const handleLoadMore = () => {
+    if (!hasMore) return;
+    setVisibleCount((prev) => prev + PER_PAGE);
+  };
 
   return (
     <section className='vr-create-ing'>
@@ -169,27 +187,41 @@ export default function CreateFromIngredients() {
         )}
 
       {/* RESULTS GRID */}
-      {matchedRecipes.length > 0 && (
-        <div className='vr-category__grid'>
-          {matchedRecipes.map((r, index) => (
-            <div
-              key={r.id}
-              onClick={() => setShowIngredientsModal(false)}
-              style={{ display: 'contents', cursor: 'pointer' }}
-            >
-              <RecipeCard recipe={r} />
+      {visibleRecipes.length > 0 && (
+        <>
+          <div className='vr-category__grid'>
+            {visibleRecipes.map((r, index) => (
+              <div
+                key={r.id}
+                onClick={() => setShowIngredientsModal(false)}
+                style={{ display: 'contents', cursor: 'pointer' }}
+              >
+                <RecipeCard recipe={r} />
 
-              {isMounted && (
-                <AdSlot
-                  id='101'
-                  position='in-feed'
-                  index={index}
-                  every={5}
-                />
-              )}
+                {isMounted && (
+                  <AdSlot
+                    id='101'
+                    position='in-feed'
+                    index={index}
+                    every={5}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className='vr-load-more-wrapper'>
+              <button
+                type='button'
+                className='vr-load-more-btn'
+                onClick={handleLoadMore}
+              >
+                Load More Recipes
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </section>
   );

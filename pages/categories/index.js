@@ -25,7 +25,7 @@ export async function getServerSideProps({ res }) {
   );
 
   const safeColumns =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+    'id, title, description, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   // A. Fetch a large batch to find all unique cuisines
   const { data: allData } = await supabase

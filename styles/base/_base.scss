@@ -135,3 +135,101 @@ a {
   -webkit-text-decoration-skip: objects;
   -webkit-appearance: none;
 }
+
+/* Wrapper: Aligns lines and button with a flex layout */
+.vr-load-more-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 2rem 0 1rem;
+  gap: 1.5rem; /* Space between lines and button */
+}
+
+/* The Lines: Elegant fading gradients */
+.vr-load-more-wrapper::before,
+.vr-load-more-wrapper::after {
+  content: '';
+  flex: 1; /* Takes up all available space */
+  height: 1px;
+  background: #e2e8f0; /* Fallback solid color */
+  border-radius: 1px;
+}
+
+/* Left Line: Fades in from left */
+.vr-load-more-wrapper::before {
+  background: linear-gradient(90deg, transparent, #cbd5e1);
+}
+
+/* Right Line: Fades in from right */
+.vr-load-more-wrapper::after {
+  background: linear-gradient(90deg, #cbd5e1, transparent);
+}
+
+/* Button Base */
+.vr-load-more-btn {
+  position: relative;
+  padding: 0.5rem 2.5rem;
+
+  /* Typography */
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff; /* Dark text */
+
+  /* Shape & Border */
+  background: var(--vr-primary);
+  border: 2px solid #e2e8f0; /* Subtle border initially */
+  border-radius: 50px;
+
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.vr-load-more-btn:hover:not(:disabled) {
+  border-color: var(--vr-accent); /* Border turns dark */
+  background: var(--vr-accent); /* Background turns dark */
+  color: #fff; /* Text turns white */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.vr-load-more-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.vr-load-more-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Optional: Shine effect on hover */
+.vr-load-more-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: none;
+}
+
+.vr-load-more-btn:hover::after {
+  animation: shine 0.75s;
+}
+
+@keyframes shine {
+  100% {
+    left: 125%;
+  }
+}

@@ -145,10 +145,6 @@ export default function ServingTimePage({
   const [page, setPage] = useState(1);
 
   const listRef = useRef(null);
-  const sentinelRef = useRef(null);
-
-  // Ref to track loading status inside Observer (Prevents Churn)
-  const isLoadingRef = useRef(false);
   const abortControllerRef = useRef(null);
 
   // Early return if invalid (client-side safety)
@@ -188,7 +184,6 @@ export default function ServingTimePage({
     abortControllerRef.current = controller;
 
     setIsLoading(true);
-    isLoadingRef.current = true;
 
     const qs = buildQueryString(pageNumber);
 
@@ -198,29 +193,30 @@ export default function ServingTimePage({
       });
       const json = await res.json();
       const data = json.data || [];
-
-      if (replace || pageNumber === 1) {
-        setTotalCount(json.total_count || json.count || 0);
-      }
-
-      setRecipes((prev) => {
-        const currentList = replace ? [] : prev;
-        const existingIds = new Set(currentList.map((r) => r.id));
-        const uniqueNewData = data.filter((r) => !existingIds.has(r.id));
-        return [...currentList, ...uniqueNewData];
-      });
-
-      const currentCount = replace ? data.length : recipes.length + data.length;
       const serverTotal = json.total_count || json.count || 0;
 
-      if (
-        data.length < PER_PAGE ||
-        (serverTotal > 0 && currentCount >= serverTotal)
-      ) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setRecipes((prev) => {
+        const base = replace || pageNumber === 1 ? [] : prev;
+        const existingIds = new Set(base.map((r) => r.id));
+        const uniqueNewData = data.filter((r) => !existingIds.has(r.id));
+        const next = [...base, ...uniqueNewData];
+        const currentCount = next.length;
+
+        if (
+          data.length < PER_PAGE ||
+          (serverTotal > 0 && currentCount >= serverTotal)
+        ) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+        if (replace || pageNumber === 1) {
+          setTotalCount(serverTotal);
+        }
+
+        return next;
+      });
 
       setPage(pageNumber);
     } catch (err) {
@@ -228,7 +224,6 @@ export default function ServingTimePage({
       console.error('Failed to fetch recipes', err);
     } finally {
       setIsLoading(false);
-      isLoadingRef.current = false;
     }
   };
 
@@ -249,32 +244,13 @@ export default function ServingTimePage({
   }, [filters, servingTime]);
 
   // ----------------------------------------
-  // INFINITE SCROLL
+  // LOAD MORE BUTTON HANDLER (replaces infinite scroll)
   // ----------------------------------------
-  useEffect(() => {
-    if (!hasMore) return;
-    if (!sentinelRef.current) return;
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting) return;
-
-        // Check Ref instead of State to prevent closure staleness
-        if (isLoadingRef.current) return;
-
-        fetchRecipesPage(page + 1);
-      },
-      {
-        rootMargin: '1200px', // Pre-load 2 screens ahead
-        threshold: 0.1
-      }
-    );
-
-    obs.observe(sentinelRef.current);
-    return () => obs.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMore, page, filters, servingTime]);
+  const handleLoadMore = () => {
+    if (isLoading || !hasMore) return;
+    const nextPage = page + 1;
+    fetchRecipesPage(nextPage);
+  };
 
   return (
     <>
@@ -355,14 +331,17 @@ export default function ServingTimePage({
             ))}
           </div>
 
-          {/* Sentinel Div - with explicit height to fix mobile scrolling */}
-          {hasMore && (
-            <div
-              ref={sentinelRef}
-              className='vr-infinite-sentinel'
-              style={{ height: '20px', width: '100%' }}
-            >
-              {isLoading && <span>Loading more recipes…</span>}
+          {/* Load More Button (replaces infinite scroll sentinel) */}
+          {recipes.length > 0 && hasMore && (
+            <div className='vr-load-more-wrapper'>
+              <button
+                type='button'
+                className='vr-load-more-btn'
+                onClick={handleLoadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Loading…' : 'Load more recipes'}
+              </button>
             </div>
           )}
 

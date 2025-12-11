@@ -2,13 +2,17 @@ import { useEffect, useState, useRef } from 'react';
 
 const AdSlot = ({
   id,
-  index,
-  every,
-  minHeight = '250px' // Start with this height reserved
+  position,
+  marginTop,
+  marginBottom,
+  placement,
+  index, // index in the list (for every N items)
+  every // show ad every N items (optional)
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
-  const [isAdFilled, setIsAdFilled] = useState(true); // Assume it will fill initially to keep space reserved
-  const isInitialized = useRef(false);
+  const [isDev, setIsDev] = useState(false);
+  const [isVisible, setIsVisible] = useState(false); // 👈 start hidden in prod
+  const [isDead, setIsDead] = useState(false); // 👈 fully remove if no ad
+  const isLoaded = useRef(false);
 
   const shouldRender =
     typeof every === 'number' && typeof index === 'number'
@@ -16,78 +20,114 @@ const AdSlot = ({
       : true;
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (!shouldRender) return;
 
-  useEffect(() => {
-    if (!isMounted || !shouldRender) return;
-    if (isInitialized.current) return;
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        setIsDev(true);
+        setIsVisible(true); // always visible in dev
+        return;
+      }
+    }
 
-    // 1. Initialize Ezoic
-    if (typeof window !== 'undefined' && window.ezstandalone) {
-      try {
-        const adId = parseInt(id, 10);
-        window.ezstandalone.cmd = window.ezstandalone.cmd || [];
-        window.ezstandalone.cmd.push(() => {
-          window.ezstandalone.define(adId);
+    if (typeof window !== 'undefined') {
+      window.ezstandalone = window.ezstandalone || {};
+      window.ezstandalone.cmd = window.ezstandalone.cmd || [];
+
+      window.ezstandalone.cmd.push(() => {
+        if (isLoaded.current) return;
+
+        try {
+          window.ezstandalone.define(parseInt(id, 10));
+
           if (!window.ezstandalone.enabled) {
             window.ezstandalone.enable();
             window.ezstandalone.display();
           } else {
             window.ezstandalone.refresh();
           }
-        });
-        isInitialized.current = true;
-      } catch (err) {
-        console.warn('Ezoic Init Error:', err);
-      }
-    }
 
-    // 2. "Smart Cleanup" Timer
-    // Wait 4 seconds. If the ad is still empty (height < 10px), collapse the box.
-    const timer = setTimeout(() => {
+          isLoaded.current = true;
+        } catch (err) {
+          console.warn('Ezoic ad error:', err);
+        }
+      });
+    }
+  }, [id, shouldRender]);
+
+  // Decide whether to show or kill the slot (without initial blank gap)
+  useEffect(() => {
+    if (!shouldRender || isDev) return;
+
+    const timeout = setTimeout(() => {
+      if (typeof window === 'undefined') return;
+
       const placeholder = document.getElementById(
         `ezoic-pub-ad-placeholder-${id}`
       );
 
-      // If element exists but has no height or no children, consider it failed/blocked
+      // If ad filled → show it
       if (
         placeholder &&
-        (placeholder.offsetHeight < 10 || placeholder.childElementCount === 0)
+        placeholder.offsetHeight >= 5 &&
+        placeholder.childElementCount > 0
       ) {
-        setIsAdFilled(false); // This will trigger the collapse
+        setIsVisible(true);
+      } else {
+        // No ad → completely remove
+        setIsDead(true);
       }
-    }, 4000);
+    }, 2500); // you can tweak this delay
 
-    return () => clearTimeout(timer);
-  }, [isMounted, shouldRender, id]);
+    return () => clearTimeout(timeout);
+  }, [id, shouldRender, isDev]);
 
-  if (!shouldRender) return null;
+  // If this instance isn't supposed to render at all, or we decided it's dead
+  if (!shouldRender || isDead) {
+    return null;
+  }
 
-  // If we decided the ad failed (isAdFilled === false), return null to remove it from DOM
-  if (!isAdFilled) return null;
+  // LOCAL DEVELOPMENT VISUALIZER
+  if (isDev) {
+    return (
+      <div
+        style={{
+          position: placement,
+          top: '100px',
+          backgroundColor: '#f0f0f0',
+          color: '#666',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 'bold',
+          borderRadius: '8px',
+          marginTop,
+          minHeight: '120px'
+        }}
+      >
+        EZOIC AD PLACEHOLDER
+        <br />
+        ID: {id}
+        <br />
+        Position: {position}
+      </div>
+    );
+  }
 
+  // LIVE PRODUCTION SLOT
   return (
     <div
-      className='ad-slot-container'
+      className='ezoic-ad-slot-container'
       style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        // Keep space reserved until we know for sure it failed
-        minHeight: minHeight,
-        margin: '2rem 0',
-        overflow: 'hidden',
-        // Optional: Add a smooth transition if it collapses
-        transition: 'min-height 0.3s ease-out'
+        // 👇 keep it in the DOM for Ezoic, but don't show until we know an ad filled
+        display: isVisible ? 'block' : 'none',
+        marginTop: isVisible ? marginTop : 0,
+        marginBottom: isVisible ? marginBottom || '1rem' : 0
       }}
     >
-      {isMounted ? (
-        <div id={`ezoic-pub-ad-placeholder-${id}`} />
-      ) : (
-        <div style={{ height: minHeight, width: '100%' }} />
-      )}
+      <div id={`ezoic-pub-ad-placeholder-${id}`} />
     </div>
   );
 };

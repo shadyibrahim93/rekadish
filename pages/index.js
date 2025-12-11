@@ -1,7 +1,7 @@
 // pages/index.js
 import Head from 'next/head';
 import Link from 'next/link';
-import { Fragment, useMemo, useState, useEffect, useRef } from 'react';
+import { Fragment, useMemo, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeCard from '../components/RecipeCard';
 import { useModal } from '../components/ModalContext';
@@ -21,7 +21,7 @@ export async function getServerSideProps({ res }) {
   );
 
   const cardColumns =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+    'id, title, slug, description, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
   const { data: topRated } = await supabase
     .from('recipes')
@@ -88,10 +88,9 @@ export default function Home({
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
   const [isMounted, setIsMounted] = useState(false);
 
-  // Lazy Reveal State
+  // Lazy Reveal State (replaced infinite scroll with button)
   const [visibleCuisinesCount, setVisibleCuisinesCount] =
     useState(SECTIONS_PER_BATCH);
-  const sentinelRef = useRef(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -103,27 +102,10 @@ export default function Home({
 
   const hasMore = visibleCuisinesCount < cuisines.length;
 
-  // ----------------------------------------
-  // LAZY REVEAL OBSERVER
-  // ----------------------------------------
-  useEffect(() => {
+  const handleLoadMoreCuisines = () => {
     if (!hasMore) return;
-    if (!sentinelRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting) {
-          // Reveal next batch
-          setVisibleCuisinesCount((prev) => prev + SECTIONS_PER_BATCH);
-        }
-      },
-      { rootMargin: '1200px', threshold: 0.1 }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore]);
+    setVisibleCuisinesCount((prev) => prev + SECTIONS_PER_BATCH);
+  };
 
   const metaKeywords = useMemo(() => {
     const cuisineKeywords = cuisines.join(', ');
@@ -336,7 +318,7 @@ export default function Home({
             </section>
           )}
 
-          {/* 3. CUISINE SECTIONS (Lazy Loaded) */}
+          {/* 3. CUISINE SECTIONS (Lazy Loaded via button) */}
           {cuisines.length > 0 && (
             <section
               className='vr-section vr-section--cuisines'
@@ -379,12 +361,16 @@ export default function Home({
                   </div>
                 ))}
 
-                {/* Sentinel for Lazy Reveal */}
                 {hasMore && (
-                  <div
-                    ref={sentinelRef}
-                    style={{ height: '50px', width: '100%' }}
-                  />
+                  <div className='vr-load-more-wrapper'>
+                    <button
+                      type='button'
+                      className='vr-load-more-btn'
+                      onClick={handleLoadMoreCuisines}
+                    >
+                      Load more cuisines
+                    </button>
+                  </div>
                 )}
               </div>
             </section>
