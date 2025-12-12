@@ -1,0 +1,241 @@
+/* =======================================
+   CONTACT PAGE / COMPONENT
+======================================= */
+
+.vr-contact {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.vr-contact__hero {
+  border-radius: var(--vr-radius);
+  background: radial-gradient(
+      circle at top left,
+      rgba(97, 178, 124, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(255, 107, 107, 0.18),
+      transparent 60%
+    ),
+    var(--vr-surface);
+  box-shadow: var(--vr-shadow);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 1.6rem 1.7rem;
+}
+
+.vr-contact__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--vr-secondary);
+  letter-spacing: -0.01em;
+}
+
+.vr-contact__subtitle {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--vr-muted);
+}
+
+.vr-contact__link {
+  color: var(--vr-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.vr-contact__link:hover {
+  text-decoration: underline;
+}
+
+.vr-contact__card {
+  border-radius: var(--vr-radius);
+  background: var(--vr-surface);
+  box-shadow: var(--vr-shadow);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 1.35rem 1.4rem 1.45rem;
+}
+
+.vr-contact__topicHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.vr-contact__topicHeadline {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--vr-secondary);
+}
+
+.vr-contact__topicSub {
+  margin-top: 0.25rem;
+  font-size: 0.92rem;
+  color: var(--vr-muted);
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.vr-contact__subjectPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--vr-secondary);
+  font-size: 0.86rem;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vr-contact__form {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.vr-contact__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.15rem;
+}
+
+.vr-contact__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--vr-secondary);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.vr-contact__pillIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.22);
+}
+
+.vr-contact__pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.1);
+  border-color: rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.06);
+}
+
+.vr-contact__pill--active {
+  background: var(--vr-secondary);
+  border-color: var(--vr-secondary);
+  color: #ffffff;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16);
+
+  &:hover {
+    transform: translateY(-1px);
+    background: var(--vr-secondary);
+    color: #ffffff;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16);
+  }
+}
+
+.vr-contact__pill--active .vr-contact__pillIcon {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.vr-contact__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.vr-contact__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--vr-muted);
+}
+
+.vr-contact__submit {
+  margin-top: 0.15rem;
+}
+
+.vr-contact__hp {
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Make success/error messages feel like the rest of the UI */
+.vr-auth__message.is-success,
+.vr-auth__message.is-error {
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  color: var(--vr-secondary);
+}
+
+/* Success: subtle green-tinted surface + dashed accent (like author philosophy box) */
+.vr-auth__message.is-success {
+  background: linear-gradient(
+    120deg,
+    rgba(97, 178, 124, 0.14),
+    rgba(255, 255, 255, 0.92)
+  );
+  border-color: rgba(97, 178, 124, 0.35);
+  border-style: dashed;
+}
+
+/* Error: subtle red-tinted surface + dashed accent */
+.vr-auth__message.is-error {
+  background: linear-gradient(
+    120deg,
+    rgba(255, 107, 107, 0.16),
+    rgba(255, 255, 255, 0.92)
+  );
+  border-color: rgba(255, 107, 107, 0.45);
+  border-style: dashed;
+}
+
+@media (max-width: 768px) {
+  .vr-contact__hero {
+    padding: 1.35rem 1.25rem;
+  }
+
+  .vr-contact__card {
+    padding: 1.15rem 1.1rem 1.2rem;
+  }
+
+  .vr-contact__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vr-contact__subjectPill {
+    width: 100%;
+  }
+}

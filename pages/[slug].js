@@ -70,7 +70,7 @@ export async function getServerSideProps({ params, res }) {
 
   const { servingTime } = config;
   const SAFE_COLUMNS =
-    'id, title, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine, ingredients';
+    'id, title, description, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine, ingredients';
 
   const {
     data: allRecipes,
@@ -255,9 +255,7 @@ export default function ServingTimePage({
   return (
     <>
       <Head>
-        <title>
-          {pageTitle} | {BRAND_NAME}
-        </title>
+        <title>{`${pageTitle} | ${BRAND_NAME}`}</title>
         <meta
           name='description'
           content={metaDescription}

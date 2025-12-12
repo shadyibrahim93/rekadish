@@ -122,7 +122,12 @@ export default function Footer() {
                 <Link href='/about'>About Us</Link>
               </li>
               <li>
-                <Link href='/contact'>Contact</Link>
+                <Link
+                  href='/support/contact'
+                  prefetch={false}
+                >
+                  Contact
+                </Link>
               </li>
             </ul>
           </div>

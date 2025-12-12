@@ -16,6 +16,7 @@
     "compress": "node optimize-images.js"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@heroicons/react": "^2.0.18",
     "@supabase/supabase-js": "^2.30.0",
     "adm-zip": "^0.5.16",

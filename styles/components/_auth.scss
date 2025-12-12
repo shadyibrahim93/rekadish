@@ -59,7 +59,8 @@
     color: #444;
   }
 
-  input {
+  input,
+  textarea {
     padding: 0.7rem 0.9rem;
     border-radius: 10px;
     border: 1px solid #ddd;
@@ -187,4 +188,52 @@
     background: none;
     color: var(--vr-accent);
   }
+}
+
+.vr-contact-topic {
+  margin-bottom: 0.35rem;
+}
+.vr-contact-topic__label {
+  font-size: 0.8rem;
+  color: var(--vr-muted);
+  margin-bottom: 0.45rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.vr-contact-topic__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.vr-contact-topic__pill {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--vr-secondary);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease,
+    border-color 0.16s ease;
+}
+.vr-contact-topic__pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+  border-color: rgba(255, 107, 107, 0.35);
+  background: rgba(255, 107, 107, 0.06);
+}
+.vr-contact-topic__pill--active {
+  background: var(--vr-secondary);
+  border-color: var(--vr-secondary);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+}
+.vr-contact-topic__pill--active:hover {
+  background: var(--vr-secondary);
+}
+.vr-contact-topic__pill:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.35);
 }

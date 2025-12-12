@@ -219,6 +219,18 @@ export default function Header() {
                 {BRAND_NAME} Team
               </Link>
 
+              <Link
+                href='/team'
+                onClick={closeMenu}
+              >
+                <img
+                  className='vr-menu__img'
+                  src='/images/menu/contact.webp'
+                  alt='RekaDish Team'
+                />
+                Contact
+              </Link>
+
               <div className='vr-menu__auth'>
                 {!loading && !user && (
                   <button
