@@ -1,9 +1,15 @@
-# *
+# RekaDish robots.txt — allow crawling of public content
+
 User-agent: *
-Disallow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /drafts/
+Disallow: /private/
+Disallow: /internal/
+Disallow: /_next/
+Disallow: /static/admin/
+Disallow: /search/
 
-# Host
-Host: https://rekadish.com
+# Allow everything else (default when not disallowed)
 
-# Sitemaps
 Sitemap: https://rekadish.com/sitemap.xml
