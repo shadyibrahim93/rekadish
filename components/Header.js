@@ -220,7 +220,7 @@ export default function Header() {
               </Link>
 
               <Link
-                href='/team'
+                href='/support/contact'
                 onClick={closeMenu}
               >
                 <img
