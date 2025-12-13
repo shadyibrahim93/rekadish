@@ -680,9 +680,16 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
     .vr-category__title {
       color: #fff;
       font-size: 2.3rem;
+      margin-bottom: 3rem;
 
       &::before {
         background: var(--vr-primary);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .vr-category__title {
+        margin-bottom: 1.5rem;
       }
     }
 
