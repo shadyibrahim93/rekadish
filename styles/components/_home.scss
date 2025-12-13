@@ -1,7 +1,7 @@
 $brand-gradient: linear-gradient(
   135deg,
-  #ff9966 0%,
-  #ff5e62 100%
+  #fff 0%,
+  var(--vr-muted) 100%
 ); // Matches your logo
 $text-dark: var(--vr-secondary);
 $font-stack: 'Inter', sans-serif; // Or whatever font you are using
@@ -23,43 +23,53 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
 ------------------------------------------ */
 .vr-category {
   flex: 1 1 65%;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem; // Increased slightly for better spacing
 
   &__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    padding-bottom: 0.5rem; // Subtle breathing room
   }
 
   &__title {
     font-family: $font-stack;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.5rem; // Slightly larger
+    font-weight: 800; // Extra bold makes it pop
     color: $text-dark;
-    margin-bottom: 1rem; // Needs more space for the line
+    margin-bottom: 0; // Reset, handled by parent padding
     position: relative;
-    display: inline-block; // Wrap tight around text
-    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.1;
+    letter-spacing: -0.025em; // Tighter tracking looks more premium
+    padding-left: 1rem; // Space for the new accent
 
-    &::after {
+    /* The Modern Vertical Accent */
+    &::before {
       content: '';
       position: absolute;
       left: 0;
-      bottom: -8px; // Push it down slightly
-      width: 60px; // Fixed width, doesn't underline whole sentence
-      height: 4px;
-      background: var(--vr-accent);
-      border-radius: 2px;
+      top: 50%;
+      transform: translateY(-50%); // Perfectly center vertically
+      width: 6px; // Thicker vertical pill
+      height: 70%; // Not full height, looks more elegant
+      background: var(--vr-accent); // Uses your brand color
+      border-radius: 10px; // Fully rounded capsule shape
+    }
+
+    /* Remove the old bottom underline */
+    &::after {
+      display: none;
     }
   }
 
   &__grid {
     display: grid;
     width: 100%;
-    gap: 1rem;
-    /* Dynamic, responsive grid that fills available space
-       and keeps cards at a reasonable min width */
+    gap: 1.5rem; // Increased gap for a cleaner, airier layout
+    /* Dynamic, responsive grid */
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     align-items: stretch;
 
@@ -241,5 +251,657 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
     &:active {
       transform: translateY(0px);
     }
+  }
+}
+
+/* =========================================
+   1. QUICK BROWSE PILLS
+   ========================================= */
+
+.vr-section:has(.vr-quick-browse) {
+  max-width: calc(100vw - 4rem);
+
+  @media screen and (min-width: 1280px) {
+    max-width: calc(100vw - 6rem);
+  }
+
+  @media screen and (max-width: 767px) {
+    max-width: calc(100vw - 2.5rem);
+  }
+}
+
+.vr-quick-browse {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  /* ✅ key fixes */
+  box-sizing: border-box; /* prevents padding from making it wider than 100% */
+  min-width: 0; /* allows it to shrink inside flex parents */
+  width: 100%;
+  max-width: 100%;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  padding: 0.5rem 0;
+
+  .vr-pill {
+    flex: 0 0 auto; /* Don't shrink, don't grow, base size on content */
+    padding: 0.6rem 1.25rem;
+
+    background: var(--vr-surface);
+    color: var(--vr-muted);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    border-radius: 100px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    white-space: nowrap; /* Ensures text inside pill doesn't break */
+
+    &:hover {
+      background: var(--vr-accent);
+      color: var(--vr-surface);
+      border-color: var(--vr-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+/* =========================================
+   FEATURE HIGHLIGHTS – Premium Cards
+   ========================================= */
+.vr-features {
+  display: block;
+
+  .vr-feature-items__container {
+    display: grid;
+    gap: clamp(0.75rem, 1vw, var(--vr-gap));
+    grid-template-columns: 1fr;
+  }
+
+  .vr-feature-item {
+    position: relative;
+    overflow: hidden;
+
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    padding: clamp(1rem, 2.5vw, 1.4rem);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    transition: transform 0.22s ease, box-shadow 0.22s ease,
+      border-color 0.22s ease;
+
+    /* subtle decorative gradient blob */
+    &::before {
+      content: '';
+      position: absolute;
+      right: 00px;
+      top: 0px;
+      width: 200px;
+      height: 10px;
+      background: $brand-gradient;
+      opacity: 0.12;
+      filter: blur(2px);
+      pointer-events: none;
+      transition: width 0.5s ease;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+      &::before {
+        content: '';
+        width: 100%;
+        background: linear-gradient(
+          135deg,
+          var(--vr-accent) 0%,
+          var(--vr-secondary) 100%
+        );
+        opacity: 0.12;
+        filter: blur(2px);
+      }
+
+      .vr-feature-icon {
+        background: var(--vr-accent);
+        color: #fff;
+        transform: scale(1.08) rotate(3deg);
+      }
+    }
+
+    .vr-feature-icon {
+      margin-bottom: 0.9rem;
+      width: clamp(44px, 4.5vw, 52px);
+      height: clamp(44px, 4.5vw, 52px);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      color: var(--vr-accent);
+
+      transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease,
+        border-color 0.22s ease;
+      flex-shrink: 0;
+    }
+
+    .vr-feature-title {
+      font-size: clamp(1.05rem, 1rem + 0.35vw, 2.15rem);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      margin: 0 0 0.4rem 0;
+    }
+
+    .vr-feature-text {
+      font-size: clamp(0.93rem, 0.9rem + 0.25vw, 0.98rem);
+      color: var(--vr-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+}
+
+@media (min-width: 520px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .vr-features .vr-feature-item:hover {
+    transform: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    border-color: rgba(15, 23, 42, 0.08);
+
+    .vr-feature-icon {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--vr-primary);
+      transform: none;
+    }
+  }
+}
+
+/* =========================================
+   NEWSLETTER HOME SECTION
+   ========================================= */
+.vr-newsletter-home {
+  border-radius: var(--vr-radius);
+  /* Dark Secondary background for high contrast against the white page */
+  background: var(--vr-secondary);
+  background-image: linear-gradient(
+    135deg,
+    var(--vr-secondary) 0%,
+    #2c3e50 100%
+  );
+  color: #fff;
+  padding: 3rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      text-align: left;
+      justify-content: space-between;
+    }
+  }
+
+  &__text {
+    flex: 1;
+    max-width: 500px;
+
+    .vr-newsletter-home__icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      display: block;
+      color: var(--vr-accent-2); /* Yellow/Gold pop */
+    }
+
+    h3 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 0 0 0.5rem 0;
+      color: #fff;
+    }
+
+    p {
+      margin: 0;
+      font-size: 1rem;
+      color: #cbd5e1; /* Muted light grey */
+      line-height: 1.5;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 400px;
+
+    @media (min-width: 640px) {
+      flex-direction: row;
+    }
+
+    input {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: rgba(255, 255, 255, 0.1); /* Glassmorphism input */
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.2s;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      &:focus {
+        background: #fff;
+        color: #000;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+      }
+    }
+
+    button {
+      background: var(--vr-accent); /* Brand Green */
+      color: #fff;
+      border: none;
+      padding: 0.85rem 1.5rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.2s, background 0.2s;
+
+      .icon-right {
+        font-size: 0.9em;
+      }
+
+      &:hover {
+        background: var(--vr-primary); /* Slightly darker green */
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  &__success {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--vr-primary);
+    border: 1px solid var(--vr-primary);
+    display: inline-block;
+  }
+}
+
+/* =========================================
+   SPOTLIGHT (“Recipe of the Day”) – Hero-like
+   ========================================= */
+.vr-spotlight {
+  &__label {
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(15, 23, 42, 0.55);
+    margin-bottom: 0.75rem;
+  }
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    border-radius: 22px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.9);
+
+    box-shadow: var(--vr-soft-shadow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      min-height: 360px;
+    }
+
+    /* fancy gradient “frame” */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: $brand-gradient;
+      opacity: 0.18;
+      filter: blur(14px);
+      pointer-events: none;
+    }
+  }
+
+  &__image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+
+    @media (min-width: 768px) {
+      width: 56%;
+      height: auto;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: scale(1.01);
+      transition: transform 0.5s ease;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at 20% 20%,
+        rgba(255, 255, 255, 0.18),
+        transparent 55%
+      );
+      pointer-events: none;
+    }
+  }
+
+  &__card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--vr-soft-shadow-2);
+  }
+
+  &__card:hover &__image-wrapper img {
+    transform: scale(1.06);
+  }
+
+  &__content {
+    position: relative;
+    padding: clamp(2rem, 2.5vw, 2rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: var(--vr-secondary);
+
+    .vr-category__title {
+      color: #fff;
+      font-size: 2.3rem;
+
+      &::before {
+        background: var(--vr-primary);
+      }
+    }
+
+    @media (min-width: 768px) {
+      width: 44%;
+      padding: clamp(1.5rem, 2.6vw, 2.5rem);
+    }
+
+    h3 {
+      font-size: clamp(1.3rem, 1.15rem + 0.7vw, 1.8rem);
+      font-weight: 950;
+      letter-spacing: -0.03em;
+      margin: 0.35rem 0 0.5rem;
+      color: var(--vr-primary);
+    }
+
+    p {
+      color: #f8fafc;
+      font-size: 1rem;
+      margin: 0 0 1.25rem;
+      line-height: 1.65;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    line-height: 1;
+
+    .vr-tag {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff;
+      line-height: 1;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 700;
+      position: relative;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+      text-decoration: none;
+      gap: 0.5rem;
+      display: flex;
+
+      svg {
+        line-height: 1;
+      }
+    }
+  }
+
+  &__btn {
+    background: var(--vr-primary);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    line-height: 1;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 700;
+    position: relative;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    text-decoration: none;
+    gap: 0.5rem;
+    display: flex;
+
+    &:hover {
+      transform: translateY(-2px);
+      filter: saturate(1.05);
+      background: var(--vr-accent);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 18px 44px rgba(255, 94, 98, 0.28), var(--vr-focus);
+    }
+  }
+}
+
+/* =========================================
+   OUR MISSION / FEATURES SECTION
+   ========================================= */
+.vr-mission {
+  /* New: A centered header to introduce the section */
+  &__header {
+    text-align: center;
+    margin: 0 auto 3rem auto;
+
+    h2 {
+      font-family: var(--vr-font-sans);
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--vr-secondary);
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      color: var(--vr-muted);
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+  }
+
+  /* The Grid Container */
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem; /* More space between cards */
+    justify-content: center;
+  }
+
+  /* The Card */
+  &__card {
+    background: #fff; /* Clean white look */
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Left aligned looks more modern than centered */
+    gap: 1.25rem;
+
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+    /* Responsive Sizing */
+    flex: 1 1 250px;
+    min-width: 280px;
+
+    /* Shadow for depth */
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+
+    /* Hover Effect: Lift + Border Accent */
+    &:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+      border-color: transparent;
+
+      /* Animate the icon */
+      .vr-mission__icon {
+        background: var(--vr-accent);
+        color: #fff;
+        transform: scale(1.1) rotate(3deg);
+      }
+
+      .vr-mission__text {
+        font-weight: 600;
+      }
+
+      /* Show a bottom border accent */
+      &::after {
+        opacity: 1;
+        transform: scaleX(1);
+      }
+    }
+
+    /* A subtle accent line at the bottom that appears on hover */
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--vr-accent);
+      opacity: 0;
+      transform: scaleX(0.8);
+      transition: all 0.3s ease;
+    }
+  }
+
+  /* The Icon */
+  &__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px; /* Soft square/squircle */
+
+    color: var(--vr-accent);
+    border: 1px solid #d4d4d456;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    transition: all 0.3s ease;
+
+    svg {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  /* Typography inside card */
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--vr-secondary);
+    margin: 0;
+  }
+
+  &__text {
+    font-size: 1rem;
+    color: var(--vr-muted);
+    line-height: 1.6;
+    margin: 0;
   }
 }

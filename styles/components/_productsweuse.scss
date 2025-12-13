@@ -1,3 +1,9 @@
+.vr-products-we-use {
+  .vr-category__grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
 /* Product name */
 .vr-equipment__name {
   font-size: 1rem;

@@ -35,7 +35,10 @@ export default function Header() {
       <header className='vr-header'>
         <div className='vr-header__inner'>
           {/* LEFT — Logo */}
-          <Link href='/'>
+          <Link
+            href='/'
+            onClick={closeMenu}
+          >
             <div className='vr-header__brand'>
               <div className='vr-header__logo'>
                 <img

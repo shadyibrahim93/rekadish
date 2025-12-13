@@ -150,7 +150,7 @@ export default function RecipeCard({ recipe, hideDifficulty, hideTime }) {
             onClick={openPlanner}
             className='vr-mobile-drawer__btn'
           >
-            View It <FiArrowRight />
+            View It
           </button>
         </div>
       </div>

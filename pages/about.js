@@ -130,17 +130,21 @@ export default function AboutPage() {
         </section>
 
         <section className='vr-about-section vr-card'>
-          <h3>Why the Name "RekaDish"?</h3>
+          <h3>Why the Name "{BRAND_NAME}"?</h3>
           <p>
-            **RekaDish** is a unique name that blends the English word "Dish"
-            with the Māori word **"Reka,"** meaning **"tasty," "sweet," or
-            "pleasant."**
+            <b>{BRAND_NAME}</b> is a unique name that blends the English word
+            "Dish" with the Māori word <b>"Reka," </b>
+            <b></b>
+            <b>meaning</b>
+            <b>"tasty,"</b>
+            <b>"sweet,"</b> or <b>"pleasant."</b>
           </p>
           <p>
-            We chose RekaDish because it succinctly captures our mission:
-            providing a delightful, high-quality cooking experience (Reka) for
-            every meal (Dish). It signifies that our recipes are vetted for
-            maximum flavor and pleasure, making every dish a guaranteed success.
+            We chose <b>{BRAND_NAME}</b> because it succinctly captures our
+            mission: providing a delightful, high-quality cooking experience
+            (Reka) for every meal (Dish). It signifies that our recipes are
+            vetted for maximum flavor and pleasure, making every dish a
+            guaranteed success.
           </p>
         </section>
 
