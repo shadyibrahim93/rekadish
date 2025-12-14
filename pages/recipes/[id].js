@@ -41,37 +41,86 @@ export default function RecipePageContainer({ recipe }) {
     ? recipe.tags
     : '';
 
+  const keywords =
+    Array.isArray(recipe.tags) && recipe.tags.length
+      ? recipe.tags
+          .map((t) => String(t).replace(/-/g, ' ').trim())
+          .filter(Boolean)
+          .join(', ')
+      : undefined;
+
+  const nutrition = recipe.nutrition;
+
+  const nutritionLd =
+    nutrition &&
+    (nutrition.calories ||
+      nutrition.fat ||
+      nutrition.protein ||
+      nutrition.carbohydrates)
+      ? {
+          '@type': 'NutritionInformation',
+          calories: nutrition.calories
+            ? /^\d+(\.\d+)?$/.test(String(nutrition.calories).trim())
+              ? `${nutrition.calories} calories`
+              : String(nutrition.calories).trim()
+            : undefined,
+          fatContent: nutrition.fat ? String(nutrition.fat).trim() : undefined,
+          proteinContent: nutrition.protein
+            ? String(nutrition.protein).trim()
+            : undefined,
+          carbohydrateContent: nutrition.carbohydrates
+            ? String(nutrition.carbohydrates).trim()
+            : undefined
+        }
+      : undefined;
+
+  const recipeUrl = `${BRAND_URL}/recipes/${recipe.slug}`; // adjust to your real route
+  const recipeImageUrl = `${BRAND_URL}/images/recipes/${recipe.image_url}.webp`;
+
   const jsonLd = {
     '@context': 'https://schema.org/',
     '@type': 'Recipe',
     name: recipe.title,
     image: `${BRAND_URL}/images/recipes/${recipe.image_url}.webp`,
-    author: {
-      '@type': 'Organization',
-      name: `${BRAND_NAME} Editorial Team`
-    },
+    author: { '@type': 'Organization', name: `${BRAND_NAME} Editorial Team` },
     publisher: {
       '@type': 'Organization',
       name: BRAND_NAME,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${BRAND_URL}/logo.webp`
-      }
+      logo: { '@type': 'ImageObject', url: `${BRAND_URL}/logo.webp` }
     },
     datePublished: recipe.created_at,
     description: recipe.description,
     recipeYield: `${recipe.servings} servings`,
     recipeCuisine: recipe.cuisine,
+
+    recipeCategory: recipe.cuisine,
+    keywords,
+    nutrition: nutritionLd,
     prepTime: `PT${recipe.prep_time}M`,
     cookTime: `PT${recipe.cook_time}M`,
     totalTime: `PT${recipe.total_time}M`,
-    recipeIngredient: (recipe.ingredients || []).map(
-      (i) => `${i.quantity || ''} ${i.ingredient}`
+
+    recipeIngredient: (recipe.ingredients || []).map((i) =>
+      `${i.quantity || ''} ${i.ingredient}`.trim()
     ),
-    recipeInstructions: (recipe.instructions || []).map((s) => ({
-      '@type': 'HowToStep',
-      text: s.text
-    })),
+
+    recipeInstructions: (recipe.instructions || [])
+      .map((step, idx) => {
+        const text = typeof step === 'string' ? step : step?.text ?? '';
+        const cleanText = String(text).trim();
+        const stepNumber = idx + 1;
+        const stepAnchor = `step-${stepNumber}`;
+        if (!cleanText) return null;
+        return {
+          '@type': 'HowToStep',
+          name: `Step ${idx + 1}`,
+          text: cleanText,
+          url: `${recipeUrl}#${stepAnchor}`,
+          image: [recipeImageUrl]
+        };
+      })
+      .filter(Boolean),
+
     ...(recipe.rating && recipe.rating_count
       ? {
           aggregateRating: {

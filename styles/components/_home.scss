@@ -326,135 +326,6 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
 }
 
 /* =========================================
-   FEATURE HIGHLIGHTS – Premium Cards
-   ========================================= */
-.vr-features {
-  display: block;
-
-  .vr-feature-items__container {
-    display: grid;
-    gap: clamp(0.75rem, 1vw, var(--vr-gap));
-    grid-template-columns: 1fr;
-  }
-
-  .vr-feature-item {
-    position: relative;
-    overflow: hidden;
-
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 14px;
-    padding: clamp(1rem, 2.5vw, 1.4rem);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    transition: transform 0.22s ease, box-shadow 0.22s ease,
-      border-color 0.22s ease;
-
-    /* subtle decorative gradient blob */
-    &::before {
-      content: '';
-      position: absolute;
-      right: 00px;
-      top: 0px;
-      width: 200px;
-      height: 10px;
-      background: $brand-gradient;
-      opacity: 0.12;
-      filter: blur(2px);
-      pointer-events: none;
-      transition: width 0.5s ease;
-    }
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-      &::before {
-        content: '';
-        width: 100%;
-        background: linear-gradient(
-          135deg,
-          var(--vr-accent) 0%,
-          var(--vr-secondary) 100%
-        );
-        opacity: 0.12;
-        filter: blur(2px);
-      }
-
-      .vr-feature-icon {
-        background: var(--vr-accent);
-        color: #fff;
-        transform: scale(1.08) rotate(3deg);
-      }
-    }
-
-    .vr-feature-icon {
-      margin-bottom: 0.9rem;
-      width: clamp(44px, 4.5vw, 52px);
-      height: clamp(44px, 4.5vw, 52px);
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      border-radius: 14px;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      color: var(--vr-accent);
-
-      transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease,
-        border-color 0.22s ease;
-      flex-shrink: 0;
-    }
-
-    .vr-feature-title {
-      font-size: clamp(1.05rem, 1rem + 0.35vw, 2.15rem);
-      font-weight: 900;
-      letter-spacing: -0.015em;
-      margin: 0 0 0.4rem 0;
-    }
-
-    .vr-feature-text {
-      font-size: clamp(0.93rem, 0.9rem + 0.25vw, 0.98rem);
-      color: var(--vr-muted);
-      line-height: 1.55;
-      margin: 0;
-    }
-  }
-}
-
-@media (min-width: 520px) {
-  .vr-features .vr-feature-items__container {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (min-width: 900px) {
-  .vr-features .vr-feature-items__container {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-@media (min-width: 1200px) {
-  .vr-features .vr-feature-items__container {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-@media (hover: none) and (pointer: coarse) {
-  .vr-features .vr-feature-item:hover {
-    transform: none;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-    border-color: rgba(15, 23, 42, 0.08);
-
-    .vr-feature-icon {
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--vr-primary);
-      transform: none;
-    }
-  }
-}
-
-/* =========================================
    NEWSLETTER HOME SECTION
    ========================================= */
 .vr-newsletter-home {
@@ -782,76 +653,43 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
 }
 
 /* =========================================
-   OUR MISSION / FEATURES SECTION
+   FEATURE HIGHLIGHTS – Premium Cards
    ========================================= */
-.vr-mission {
-  /* New: A centered header to introduce the section */
-  &__header {
-    text-align: center;
-    margin: 0 auto 3rem auto;
+.vr-features {
+  display: block;
 
-    h2 {
-      font-family: var(--vr-font-sans);
-      font-size: 2.25rem;
-      font-weight: 800;
-      color: var(--vr-secondary);
-      margin-bottom: 1rem;
-      letter-spacing: -0.02em;
-    }
-
-    p {
-      color: var(--vr-muted);
-      font-size: 1.1rem;
-      line-height: 1.6;
-    }
+  .vr-feature-items__container {
+    display: grid;
+    gap: clamp(0.75rem, 1vw, var(--vr-gap));
+    grid-template-columns: 1fr;
   }
 
-  /* The Grid Container */
-  &__row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2rem; /* More space between cards */
-    justify-content: center;
-  }
+  .vr-feature-item {
+    position: relative;
+    overflow: hidden;
 
-  /* The Card */
-  &__card {
-    background: #fff; /* Clean white look */
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 20px;
-    padding: 2.5rem 2rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    padding: clamp(1rem, 2.5vw, 1.4rem);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Left aligned looks more modern than centered */
-    gap: 1.25rem;
+    align-items: flex-start;
+    text-align: left;
+    transition: transform 0.22s ease, box-shadow 0.22s ease,
+      border-color 0.22s ease;
 
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-
-    /* Responsive Sizing */
-    flex: 1 1 250px;
-    min-width: 280px;
-
-    /* Shadow for depth */
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-
-    /* Hover Effect: Lift + Border Accent */
     &:hover {
       transform: translateY(-8px);
       box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
       border-color: transparent;
 
       /* Animate the icon */
-      .vr-mission__icon {
+      .vr-mission-icon {
         background: var(--vr-accent);
         color: #fff;
         transform: scale(1.1) rotate(3deg);
-      }
-
-      .vr-mission__text {
-        font-weight: 600;
       }
 
       /* Show a bottom border accent */
@@ -874,41 +712,217 @@ $font-stack: 'Inter', sans-serif; // Or whatever font you are using
       transform: scaleX(0.8);
       transition: all 0.3s ease;
     }
+
+    .vr-feature-icon {
+      margin-bottom: 0.9rem;
+      width: clamp(44px, 4.5vw, 52px);
+      height: clamp(44px, 4.5vw, 52px);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      color: var(--vr-accent);
+
+      transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease,
+        border-color 0.22s ease;
+      flex-shrink: 0;
+    }
+
+    .vr-feature-title {
+      font-size: clamp(1.05rem, 1rem + 0.35vw, 2.15rem);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      margin: 0 0 0.4rem 0;
+    }
+
+    .vr-feature-text {
+      font-size: clamp(0.93rem, 0.9rem + 0.25vw, 0.98rem);
+      color: var(--vr-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+}
+
+@media (min-width: 520px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .vr-features .vr-feature-items__container {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .vr-features .vr-feature-item:hover {
+    transform: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    border-color: rgba(15, 23, 42, 0.08);
+
+    .vr-feature-icon {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--vr-primary);
+      transform: none;
+    }
+  }
+}
+
+/* =========================================
+   OUR MISSION SECTION
+   ========================================= */
+.vr-mission {
+  display: block;
+
+  .vr-mission-items__container {
+    display: grid;
+    gap: clamp(0.75rem, 1vw, var(--vr-gap));
+    grid-template-columns: 1fr;
   }
 
-  /* The Icon */
-  &__icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px; /* Soft square/squircle */
+  .vr-mission-item {
+    position: relative;
+    overflow: hidden;
 
-    color: var(--vr-accent);
-    border: 1px solid #d4d4d456;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    padding: clamp(1rem, 2.5vw, 1.4rem);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    transition: all 0.3s ease;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    transition: transform 0.22s ease, box-shadow 0.22s ease,
+      border-color 0.22s ease;
 
-    svg {
-      width: 28px;
-      height: 28px;
+    &:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+      border-color: transparent;
+
+      /* Animate the icon */
+      .vr-mission-icon {
+        background: var(--vr-accent);
+        color: #fff;
+        transform: scale(1.1) rotate(3deg);
+      }
+
+      /* Show a bottom border accent */
+      &::after {
+        opacity: 1;
+        transform: scaleX(1);
+      }
+    }
+
+    /* A subtle accent line at the bottom that appears on hover */
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--vr-accent);
+      opacity: 0;
+      transform: scaleX(0.8);
+      transition: all 0.3s ease;
+    }
+
+    .vr-mission-icon {
+      margin-bottom: 0.9rem;
+      width: clamp(44px, 4.5vw, 52px);
+      height: clamp(44px, 4.5vw, 52px);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      color: var(--vr-accent);
+
+      transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease,
+        border-color 0.22s ease;
+      flex-shrink: 0;
+    }
+
+    .vr-mission-title {
+      font-size: clamp(1.05rem, 1rem + 0.35vw, 2.15rem);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      margin: 0 0 0.4rem 0;
+    }
+
+    .vr-mission-text {
+      font-size: clamp(0.93rem, 0.9rem + 0.25vw, 0.98rem);
+      color: var(--vr-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+}
+
+@media (min-width: 520px) {
+  .vr-mission .vr-mission-items__container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .vr-mission .vr-mission-items__container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .vr-mission .vr-mission-items__container {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .vr-mission .vr-mission-item:hover {
+    transform: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    border-color: rgba(15, 23, 42, 0.08);
+
+    .vr-mission-icon {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--vr-primary);
+      transform: none;
+    }
+  }
+}
+
+.vr-value {
+  .vr-value__grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: 1fr;
+
+    @media (min-width: 992px) {
+      grid-template-columns: 1.1fr 0.9fr; // mission slightly bigger
+      align-items: start;
     }
   }
 
-  /* Typography inside card */
-  &__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--vr-secondary);
-    margin: 0;
+  .vr-value__block {
+    background: var(--vr-secondary);
+    border-radius: 18px;
+    padding: 1.25rem;
   }
 
-  &__text {
-    font-size: 1rem;
-    color: var(--vr-muted);
-    line-height: 1.6;
-    margin: 0;
+  .vr-value__subtitle {
+    margin: 0 0 0.9rem 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.02em;
   }
 }

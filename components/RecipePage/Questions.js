@@ -1,33 +1,41 @@
 import Head from 'next/head';
-import React from 'react';
+import React, { useMemo } from 'react';
 import AdSlot from '../AdSlot';
 
 export default function QuestionsSection({ recipe }) {
-  if (!recipe.questions || recipe.questions.length === 0) return null;
+  const questions = recipe?.questions || [];
+  if (!questions.length) return null;
 
-  // ------------------------------------
-  // Build FAQ JSON-LD structured data
-  // ------------------------------------
-  const faqJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: recipe.questions.map((q) => ({
-      '@type': 'Question',
-      name: q.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: q.answer
-      }
-    }))
-  };
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: questions
+        .map((q) => {
+          const question = String(q?.question || '').trim();
+          const answer = String(q?.answer || '').trim();
+          if (!question || !answer) return null;
+
+          return {
+            '@type': 'Question',
+            name: question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: answer
+            }
+          };
+        })
+        .filter(Boolean)
+    }),
+    [questions]
+  );
+
+  // If all questions were empty after trimming, don't emit schema
+  if (!faqJsonLd.mainEntity.length) return null;
 
   return (
-    <section
-      className='vr-card vr-section-questions'
-      itemScope
-      itemType='https://schema.org/FAQPage'
-    >
-      {/* Inject FAQ Schema */}
+    <section className='vr-card vr-section-questions'>
+      {/* ✅ JSON-LD only (avoid duplicate FAQPage microdata) */}
       <Head>
         <script
           type='application/ld+json'
@@ -40,35 +48,18 @@ export default function QuestionsSection({ recipe }) {
       </h3>
 
       <div className='vr-questions'>
-        {recipe.questions.map((q, idx) => (
+        {questions.map((q, idx) => (
           <React.Fragment key={idx}>
-            {/* 1. The Question Item */}
-            <div
-              className='vr-question'
-              itemScope
-              itemType='https://schema.org/Question'
-            >
-              <div
-                className='vr-question__q'
-                itemProp='name'
-              >
-                {q.question}
-              </div>
-
-              <div
-                className='vr-question__a'
-                itemScope
-                itemProp='acceptedAnswer'
-                itemType='https://schema.org/Answer'
-              >
-                <div itemProp='text'>{q.answer}</div>
-              </div>
+            <div className='vr-question'>
+              <div className='vr-question__q'>{q.question}</div>
+              <div className='vr-question__a'>{q.answer}</div>
             </div>
 
-            {/* 2. The Ad Slot (Inserted after the 2nd question) */}
             {idx + 1 === 2 && (
-              <div className='vr-ad-container'>
-                {/* Ensure you create a placeholder ID "107" in Ezoic for "In-Content FAQ" */}
+              <div
+                className='vr-ad-container'
+                aria-hidden='true'
+              >
                 <AdSlot
                   id='107'
                   position='in-faq'

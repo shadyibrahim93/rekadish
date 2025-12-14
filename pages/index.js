@@ -10,6 +10,7 @@ import SideBar from '../components/SideBar.js';
 import AdSlot from '../components/AdSlot';
 import Image from 'next/image';
 import { AUTHOR_LIST } from '../lib/authors';
+import TipsAndTricksCard from '../components/TipsAndTricks/TipsAndTricksCard';
 
 // Icons
 import {
@@ -97,6 +98,22 @@ export async function getServerSideProps({ res }) {
   const cardColumns =
     'id, title, slug, description, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
 
+  const tipsColumns = [
+    'id',
+    'title',
+    'slug',
+    'description',
+    'image_url',
+    'tags',
+    'created_at',
+    'author_name',
+    'author_image',
+    'author_slug',
+    'author_role',
+    'seo_title',
+    'seo_description'
+  ].join(', ');
+
   // 1. Top Rated
   const { data: topRated } = await supabase
     .from('recipes')
@@ -105,6 +122,11 @@ export async function getServerSideProps({ res }) {
     .order('rating_count', { ascending: false })
     .limit(11);
 
+  const { data: topTips } = await supabase
+    .from('blogs')
+    .select(tipsColumns)
+    .order('created_at', { ascending: false })
+    .limit(5);
   // 2. Featured Recipe (Recipe of the Day) - Just picking the 1st highest rated for demo
   // In a real app, you might randomize this or pick a specific ID
   const featuredRecipe = await fetchRecipeOfTheDay(cardColumns);
@@ -155,7 +177,8 @@ export async function getServerSideProps({ res }) {
       quickRecipes: quickRecipes || [],
       servingTimeRecipes,
       cuisines: uniqueCuisines,
-      cuisineRecipes
+      cuisineRecipes,
+      topTips: topTips || []
     })
   );
 
@@ -186,7 +209,8 @@ export default function Home({
   quickRecipes = [],
   servingTimeRecipes = {},
   cuisines = [],
-  cuisineRecipes = {}
+  cuisineRecipes = {},
+  topTips = [] //
 }) {
   const { setShowIngredientsModal, setShowMealPlanner } = useModal();
   const [isMounted, setIsMounted] = useState(false);
@@ -312,54 +336,116 @@ export default function Home({
           {/* OUR MISSION */}
           <section className='vr-section vr-mission'>
             <div className='vr-category__header'>
-              <h3 className='vr-category__title'>Our Mission</h3>
+              <h3 className='vr-category__title'>Why RekaDish?</h3>
             </div>
 
             <div className='vr-mission__wrap'>
-              <div className='vr-mission__row'>
-                <div className='vr-mission__card'>
-                  <span className='vr-mission__icon'>
-                    <FaHandsHelping size={18} />
+              <div className='vr-mission-items__container'>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaHandsHelping size={28} />
                   </span>
-                  <span className='vr-mission__text'>
-                    Make cooking simple, joyful, and accessible.
-                  </span>
-                </div>
-
-                <div className='vr-mission__card'>
-                  <span className='vr-mission__icon'>
-                    <FaListOl size={18} />
-                  </span>
-                  <span className='vr-mission__text'>
-                    Deliver clear, step-by-step instructions.
+                  <h3 className='vr-mission-title'>Cooking for Everyone</h3>
+                  <span className='vr-mission-text'>
+                    Make cooking simple, joyful, and accessible for every home
+                    cook, no matter your schedule or experience level.
                   </span>
                 </div>
 
-                <div className='vr-mission__card'>
-                  <span className='vr-mission__icon'>
-                    <FaWallet size={18} />
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaListOl size={28} />
                   </span>
-                  <span className='vr-mission__text'>
-                    Help home cooks save time and money.
-                  </span>
-                </div>
-
-                <div className='vr-mission__card'>
-                  <span className='vr-mission__icon'>
-                    <FaRegClock size={18} />
-                  </span>
-                  <span className='vr-mission__text'>
-                    Showcase recipes anyone can follow.
+                  <h3 className='vr-mission-title'>Crystal-Clear Steps</h3>
+                  <span className='vr-mission-text'>
+                    Deliver clear, step-by-step instructions with the small
+                    details that matter, so you feel confident from prep to
+                    plate.
                   </span>
                 </div>
 
-                <div className='vr-mission__card'>
-                  <span className='vr-mission__icon'>
-                    <FaMagic size={18} />
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaWallet size={28} />
                   </span>
-                  <span className='vr-mission__text'>
-                    Build smart tools that help people cook better.
+                  <h3 className='vr-mission-title'>Smarter Home Cooking</h3>
+                  <span className='vr-mission-text'>
+                    Help home cooks save time and money with practical
+                    shortcuts, smart swaps, and budget-friendly ideas that still
+                    taste amazing.
                   </span>
+                </div>
+
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaRegClock size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Reliable Results</h3>
+                  <span className='vr-mission-text'>
+                    Showcase recipes anyone can follow. Tested for real
+                    kitchens, real ingredients, and consistently delicious
+                    results.
+                  </span>
+                </div>
+
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaMagic size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Tools That Empower</h3>
+                  <span className='vr-mission-text'>
+                    Build smart tools that help people cook better. Making
+                    planning, shopping, and learning new skills feel effortless.
+                  </span>
+                </div>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaFeatherAlt size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Create Your Own</h3>
+                  <p className='vr-mission-text'>
+                    Recipes from ingredients you have. Build, save, and share
+                    your own recipes.
+                  </p>
+                </div>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaCalendarAlt size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Smart Planner</h3>
+                  <p className='vr-mission-text'>
+                    Organize your week, share plans, and check pantry stock
+                    automatically.
+                  </p>
+                </div>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaImage size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Ingredient Clarity</h3>
+                  <p className='vr-mission-text'>
+                    Every ingredient comes with a high quality image, so you
+                    always know exactly what you’re reading.
+                  </p>
+                </div>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaBolt size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Fast & Clean</h3>
+                  <p className='vr-mission-text'>
+                    A high performance experience. No clutter, just great food.
+                  </p>
+                </div>
+                <div className='vr-mission-item'>
+                  <span className='vr-mission-icon'>
+                    <FaStar size={28} />
+                  </span>
+                  <h3 className='vr-mission-title'>Trusted & Tested</h3>
+                  <p className='vr-mission-text'>
+                    Recipes are built for real home kitchens. Clear, reliable,
+                    and made to work the first time.
+                  </p>
                 </div>
               </div>
             </div>
@@ -396,86 +482,6 @@ export default function Home({
               </div>
             </section>
           )}
-
-          {/* FEATURE HIGHLIGHTS */}
-          <section className='vr-section vr-features'>
-            <h3 className='vr-category__title'>Why RekaDish?</h3>
-            <div className='vr-feature-items__container'>
-              <div className='vr-feature-item'>
-                <span className='vr-feature-icon'>
-                  <FaFeatherAlt size={28} />
-                </span>
-                <h3 className='vr-feature-title'>Create Your Own</h3>
-                <p className='vr-feature-text'>
-                  Recipes from ingredients you have. Build, save, and share your
-                  own recipes.
-                </p>
-              </div>
-              <div className='vr-feature-item'>
-                <span className='vr-feature-icon'>
-                  <FaCalendarAlt size={28} />
-                </span>
-                <h3 className='vr-feature-title'>Smart Planner</h3>
-                <p className='vr-feature-text'>
-                  Organize your week, share plans, and check pantry stock
-                  automatically.
-                </p>
-              </div>
-              <div className='vr-feature-item'>
-                <span className='vr-feature-icon'>
-                  <FaImage size={28} />
-                </span>
-                <h3 className='vr-feature-title'>Ingredient Clarity</h3>
-                <p className='vr-feature-text'>
-                  Every ingredient comes with a high-quality image, so you
-                  always know exactly what you’re reading.
-                </p>
-              </div>
-              <div className='vr-feature-item'>
-                <span className='vr-feature-icon'>
-                  <FaBolt size={28} />
-                </span>
-                <h3 className='vr-feature-title'>Fast & Clean</h3>
-                <p className='vr-feature-text'>
-                  A high-performance experience. No clutter, just great food.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* NEWSLETTER */}
-          <section className='vr-section vr-newsletter-home'>
-            <div className='vr-newsletter-home__content'>
-              <div className='vr-newsletter-home__text'>
-                <span className='vr-newsletter-home__icon'>
-                  <FaEnvelopeOpenText />
-                </span>
-                <h3>Deliciously Simple.</h3>
-                <p>Join 10,000+ home cooks. Get recipes and plans delivered.</p>
-              </div>
-              {!submitted ? (
-                <form
-                  onSubmit={handleSubscribe}
-                  className='vr-newsletter-home__form'
-                >
-                  <input
-                    type='email'
-                    placeholder='Your email address'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                  <button type='submit'>
-                    Subscribe <FaPaperPlane className='icon-right' />
-                  </button>
-                </form>
-              ) : (
-                <div className='vr-newsletter-home__success'>
-                  🎉 You’re on the list!
-                </div>
-              )}
-            </div>
-          </section>
           {/* MEET THE TEAM */}
           <section className='vr-section vr-team-preview'>
             <div className='vr-category__header'>
@@ -526,6 +532,64 @@ export default function Home({
               ))}
             </div>
           </section>
+
+          {/* NEWSLETTER */}
+          <section className='vr-section vr-newsletter-home'>
+            <div className='vr-newsletter-home__content'>
+              <div className='vr-newsletter-home__text'>
+                <span className='vr-newsletter-home__icon'>
+                  <FaEnvelopeOpenText />
+                </span>
+                <h3>Deliciously Simple.</h3>
+                <p>Join 10,000+ home cooks. Get recipes and plans delivered.</p>
+              </div>
+              {!submitted ? (
+                <form
+                  onSubmit={handleSubscribe}
+                  className='vr-newsletter-home__form'
+                >
+                  <input
+                    type='email'
+                    placeholder='Your email address'
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                  <button type='submit'>
+                    Subscribe <FaPaperPlane className='icon-right' />
+                  </button>
+                </form>
+              ) : (
+                <div className='vr-newsletter-home__success'>
+                  🎉 You’re on the list!
+                </div>
+              )}
+            </div>
+          </section>
+          {/* TOP TIPS */}
+          {topTips.length > 0 && (
+            <section className='vr-section vr-top-tips'>
+              <div className='vr-category__header'>
+                <h3 className='vr-category__title'>Top Tips & Tricks</h3>
+                <Link
+                  href='/tips-and-tricks'
+                  className='vr-category__link'
+                >
+                  View all →
+                </Link>
+              </div>
+
+              <div className='vr-category__grid vr-tips-grid vr-tips-grid--home'>
+                {topTips.map((post) => (
+                  <TipsAndTricksCard
+                    key={post.id}
+                    post={post}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* 1. TOP RATED */}
           {topRated.length > 0 && (
             <section className='vr-section'>

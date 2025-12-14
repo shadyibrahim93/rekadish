@@ -8,7 +8,7 @@ function buildAffiliateUrl(asin) {
 }
 
 const AMAZON_IMAGE_BASE = 'https://m.media-amazon.com/images/I/';
-const FALLBACK_IMAGE = '/images/equipment-placeholder.webp'; // in /public/images/
+const FALLBACK_IMAGE = '/images/equipment-placeholder.webp';
 
 function getAmazonImageUrl(imageUrl) {
   if (!imageUrl) return '';
@@ -23,7 +23,6 @@ export default function ProductsWeUse({
 }) {
   const isSidebarMode = !products || products.length === 0;
 
-  // For sidebar mode we pick random products *after* mount (client only)
   const [sidebarProducts, setSidebarProducts] = useState([]);
 
   useEffect(() => {
@@ -34,14 +33,9 @@ export default function ProductsWeUse({
   }, [isSidebarMode]);
 
   const effectiveProducts = useMemo(() => {
-    if (isSidebarMode) {
-      return sidebarProducts;
-    }
-    return products;
+    return isSidebarMode ? sidebarProducts : products;
   }, [isSidebarMode, sidebarProducts, products]);
 
-  // On the server in sidebar mode this will be [], so SSR renders nothing.
-  // On the client we set sidebarProducts in useEffect, and then it renders.
   if (!effectiveProducts.length) return null;
 
   const finalHeading =
@@ -64,81 +58,106 @@ export default function ProductsWeUse({
         itemProp='name'
         content={finalHeading}
       />
+      <meta
+        itemProp='numberOfItems'
+        content={String(effectiveProducts.length)}
+      />
 
       <h3 className='vr-category__title'>{finalHeading}</h3>
-
       <p className='vr-category__description'>{finalDescription}</p>
 
       <div className='vr-category__grid'>
-        {effectiveProducts.map((product, index) => (
-          <article
-            key={product.id || product.asin || index}
-            className='vr-card vr-recipe-card'
-            itemProp='itemListElement'
-            itemScope
-            itemType='https://schema.org/Product'
-          >
-            <meta
-              itemProp='position'
-              content={String(index + 1)}
-            />
+        {effectiveProducts.map((product, index) => {
+          const url = buildAffiliateUrl(product.asin);
 
-            {product.imageUrl && (
-              <a
-                href={buildAffiliateUrl(product.asin)}
-                target='_blank'
-                rel='nofollow sponsored noopener noreferrer'
-                className='vr-recipe-card__media'
+          return (
+            <article
+              key={product.id || product.asin || index}
+              className='vr-card vr-recipe-card'
+              itemProp='itemListElement'
+              itemScope
+              itemType='https://schema.org/ListItem'
+            >
+              <meta
+                itemProp='position'
+                content={String(index + 1)}
+              />
+
+              {/* The actual “thing” in the list (NOT Product, so no offers/reviews required) */}
+              <div
+                itemProp='item'
+                itemScope
+                itemType='https://schema.org/Thing'
               >
-                <img
-                  src={getAmazonImageUrl(product.imageUrl)}
-                  alt={product.label || product.title}
-                  loading='lazy'
-                  className='vr-products__image'
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = FALLBACK_IMAGE;
-                  }}
+                <meta
+                  itemProp='name'
+                  content={product.label || product.title || 'Kitchen tool'}
                 />
-              </a>
-            )}
 
-            <h4
-              className='vr-equipment__name'
-              itemProp='name'
-            >
-              {product.label}
-            </h4>
+                {product.shortDescription && (
+                  <meta
+                    itemProp='description'
+                    content={product.shortDescription}
+                  />
+                )}
 
-            {product.shortDescription && (
-              <p
-                className='vr-equipment__text'
-                itemProp='description'
-              >
-                {product.shortDescription}
-              </p>
-            )}
+                {/* Provide a canonical URL for the item */}
+                {product.asin && (
+                  <meta
+                    itemProp='url'
+                    content={url}
+                  />
+                )}
 
-            {/* ✅ Hide details in sidebar mode */}
-            {!isSidebarMode && product.details && (
-              <ul className='vr-equipment__details'>
-                {product.details.map((detail, i) => (
-                  <li key={i}>{detail}</li>
-                ))}
-              </ul>
-            )}
+                {product.imageUrl && (
+                  <a
+                    href={url}
+                    target='_blank'
+                    rel='nofollow sponsored noopener noreferrer'
+                    className='vr-recipe-card__media'
+                  >
+                    <img
+                      src={getAmazonImageUrl(product.imageUrl)}
+                      alt={product.label || product.title}
+                      loading='lazy'
+                      className='vr-products__image'
+                      itemProp='image'
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_IMAGE;
+                      }}
+                    />
+                  </a>
+                )}
 
-            <a
-              href={buildAffiliateUrl(product.asin)}
-              target='_blank'
-              rel='nofollow sponsored noopener noreferrer'
-              className='vr-equipment__cta vr-search__button'
-              itemProp='url'
-            >
-              Buy Now
-            </a>
-          </article>
-        ))}
+                <h4 className='vr-equipment__name'>{product.label}</h4>
+
+                {product.shortDescription && (
+                  <p className='vr-equipment__text'>
+                    {product.shortDescription}
+                  </p>
+                )}
+
+                {!isSidebarMode && product.details && (
+                  <ul className='vr-equipment__details'>
+                    {product.details.map((detail, i) => (
+                      <li key={i}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <a
+                  href={url}
+                  target='_blank'
+                  rel='nofollow sponsored noopener noreferrer'
+                  className='vr-equipment__cta vr-search__button'
+                >
+                  Buy Now
+                </a>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
