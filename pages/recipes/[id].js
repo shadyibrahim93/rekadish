@@ -10,15 +10,11 @@ import { BRAND_NAME, BRAND_URL } from '../../lib/constants';
 export async function getServerSideProps({ params, res }) {
   const { id } = params;
 
-  // Manual Cache Strategy:
-  // s-maxage=3600: Cache this recipe page in CDN for 1 hour
-  // stale-while-revalidate=86400: Serve stale version for up to 1 day while updating
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=3600, stale-while-revalidate=86400'
   );
 
-  // Query logic remains exactly the same
   const { data: recipe, error } = await supabase
     .from('recipes')
     .select('*')
@@ -29,9 +25,7 @@ export async function getServerSideProps({ params, res }) {
     return { notFound: true };
   }
 
-  return {
-    props: { recipe }
-  };
+  return { props: { recipe } };
 }
 
 export default function RecipePageContainer({ recipe }) {
@@ -74,14 +68,15 @@ export default function RecipePageContainer({ recipe }) {
         }
       : undefined;
 
-  const recipeUrl = `${BRAND_URL}/recipes/${recipe.slug}`; // adjust to your real route
+  const recipeUrl = `${BRAND_URL}/recipes/${recipe.slug}`;
   const recipeImageUrl = `${BRAND_URL}/images/recipes/${recipe.image_url}.webp`;
 
   const jsonLd = {
     '@context': 'https://schema.org/',
     '@type': 'Recipe',
     name: recipe.title,
-    image: `${BRAND_URL}/images/recipes/${recipe.image_url}.webp`,
+    image: [recipeImageUrl],
+    mainEntityOfPage: recipeUrl,
     author: { '@type': 'Organization', name: `${BRAND_NAME} Editorial Team` },
     publisher: {
       '@type': 'Organization',
@@ -92,30 +87,27 @@ export default function RecipePageContainer({ recipe }) {
     description: recipe.description,
     recipeYield: `${recipe.servings} servings`,
     recipeCuisine: recipe.cuisine,
-
     recipeCategory: recipe.cuisine,
     keywords,
     nutrition: nutritionLd,
     prepTime: `PT${recipe.prep_time}M`,
     cookTime: `PT${recipe.cook_time}M`,
     totalTime: `PT${recipe.total_time}M`,
-
     recipeIngredient: (recipe.ingredients || []).map((i) =>
       `${i.quantity || ''} ${i.ingredient}`.trim()
     ),
-
     recipeInstructions: (recipe.instructions || [])
       .map((step, idx) => {
         const text = typeof step === 'string' ? step : step?.text ?? '';
         const cleanText = String(text).trim();
-        const stepNumber = idx + 1;
-        const stepAnchor = `step-${stepNumber}`;
         if (!cleanText) return null;
+
+        const stepNumber = idx + 1;
         return {
           '@type': 'HowToStep',
-          name: `Step ${idx + 1}`,
+          name: `Step ${stepNumber}`,
           text: cleanText,
-          url: `${recipeUrl}#${stepAnchor}`,
+          url: `${recipeUrl}#step-${stepNumber}`,
           image: [recipeImageUrl]
         };
       })
@@ -139,13 +131,17 @@ export default function RecipePageContainer({ recipe }) {
           {recipe.title} — {BRAND_NAME}
         </title>
 
-        {/* DESCRIPTION */}
+        {/* Encourage Google to use large images in previews */}
+        <meta
+          name='robots'
+          content='max-image-preview:large'
+        />
+
         <meta
           name='description'
           content={recipe.description}
         />
 
-        {/* KEYWORDS using recipe.tags */}
         {metaKeywords && (
           <meta
             name='keywords'
@@ -159,16 +155,23 @@ export default function RecipePageContainer({ recipe }) {
         />
         <meta
           name='publisher'
-          content={`${BRAND_NAME}`}
+          content={BRAND_NAME}
         />
 
-        {/* CANONICAL */}
         <link
           rel='canonical'
-          href={`${BRAND_URL}/recipes/${recipe.slug}`}
+          href={recipeUrl}
         />
 
         {/* OPEN GRAPH */}
+        <meta
+          property='og:type'
+          content='article'
+        />
+        <meta
+          property='og:site_name'
+          content={BRAND_NAME}
+        />
         <meta
           property='og:title'
           content={`${recipe.title} — ${BRAND_NAME}`}
@@ -178,23 +181,32 @@ export default function RecipePageContainer({ recipe }) {
           content={recipe.description}
         />
         <meta
-          property='og:image'
-          content={`${BRAND_URL}/images/recipes/${recipe.image_url}.webp`}
-        />
-        <meta
           property='og:url'
-          content={`${BRAND_URL}/recipes/${recipe.slug}`}
+          content={recipeUrl}
         />
         <meta
-          property='og:type'
-          content='article'
+          property='og:image'
+          content={recipeImageUrl}
         />
         <meta
-          property='og:site_name'
-          content={`${BRAND_NAME}`}
+          property='og:image:secure_url'
+          content={recipeImageUrl}
+        />
+        <meta
+          property='og:image:alt'
+          content={recipe.title}
+        />
+        {/* If your recipe images are 1:1 square, these help crawlers */}
+        <meta
+          property='og:image:width'
+          content='800'
+        />
+        <meta
+          property='og:image:height'
+          content='800'
         />
 
-        {/* TWITTER CARDS */}
+        {/* TWITTER */}
         <meta
           name='twitter:card'
           content='summary_large_image'
@@ -209,7 +221,11 @@ export default function RecipePageContainer({ recipe }) {
         />
         <meta
           name='twitter:image'
-          content={`${BRAND_URL}/images/recipes/${recipe.image_url}.webp`}
+          content={recipeImageUrl}
+        />
+        <meta
+          name='twitter:image:alt'
+          content={recipe.title}
         />
         <meta
           name='twitter:site'
@@ -219,7 +235,7 @@ export default function RecipePageContainer({ recipe }) {
         {/* PINTEREST */}
         <meta
           name='pin:media'
-          content={`${BRAND_URL}/images/recipes/${recipe.image_url}.webp`}
+          content={recipeImageUrl}
         />
         <meta
           name='pin:description'

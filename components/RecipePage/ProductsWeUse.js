@@ -88,6 +88,7 @@ export default function ProductsWeUse({
                 itemProp='item'
                 itemScope
                 itemType='https://schema.org/Thing'
+                className='vr-products-we-use-items__container'
               >
                 <meta
                   itemProp='name'
@@ -121,7 +122,6 @@ export default function ProductsWeUse({
                       alt={product.label || product.title}
                       loading='lazy'
                       className='vr-products__image'
-                      itemProp='image'
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = FALLBACK_IMAGE;

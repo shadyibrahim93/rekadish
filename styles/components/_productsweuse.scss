@@ -7,6 +7,14 @@
     height: auto;
     margin-bottom: 1rem;
   }
+
+  .vr-products-we-use-items__container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
 }
 
 /* Product name */
