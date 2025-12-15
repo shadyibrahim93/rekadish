@@ -15,6 +15,21 @@ export default function MyApp({ Component, pageProps }) {
           name='viewport'
           content='width=device-width,initial-scale=1'
         />
+
+        {/* ✅ FAVICON */}
+        <link
+          rel='icon'
+          type='image/gif'
+          href='/animated-favicon.gif'
+        />
+        <link
+          rel='icon'
+          href='/favicon.ico'
+        />
+        <link
+          rel='manifest'
+          href='/site.webmanifest'
+        />
         <meta
           name='impact-site-verification'
           value='dd3cee76-baa2-49a8-a042-5a747f4cee16'
