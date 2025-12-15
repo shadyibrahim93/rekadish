@@ -91,18 +91,19 @@ export async function getServerSideProps({ params, res }) {
       .limit(12)
   );
 
-  // 3. Fetch Related by Tag
+  // 3. Fetch Related by Tag (exclude current post + exclude same author)
   if (post.tags && post.tags.length > 0) {
     const primaryTag = post.tags[0];
-    promises.push(
-      supabase
-        .from('blogs')
-        .select(baseColumns)
-        .contains('tags', [primaryTag])
-        .neq('id', post.id)
-        .order('created_at', { ascending: false })
-        .limit(4)
-    );
+
+    let q = supabase
+      .from('blogs')
+      .select(baseColumns)
+      .contains('tags', [primaryTag])
+      .neq('id', post.id);
+
+    if (post.author_name) q = q.neq('author_name', post.author_name);
+
+    promises.push(q.order('created_at', { ascending: false }).limit(20));
   } else {
     promises.push(Promise.resolve({ data: [] }));
   }
@@ -147,7 +148,7 @@ export async function getServerSideProps({ params, res }) {
 
   if (recipeIds.length > 0) {
     const recipeColumns =
-      'id, title, description slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
+      'id, title, description, slug, image_url, rating, rating_count, total_time, cook_time, difficulty, serving_time, cuisine';
     promises.push(
       supabase.from('recipes').select(recipeColumns).in('id', recipeIds)
     );
